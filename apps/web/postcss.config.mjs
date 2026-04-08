@@ -1,6 +1,6 @@
 const config = {
   plugins: {
-    "@tailwindcss/postcss": (await import("@tailwindcss/postcss")).default,
+    "@tailwindcss/postcss": {},
   },
 };
 

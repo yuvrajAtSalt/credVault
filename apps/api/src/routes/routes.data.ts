@@ -12,6 +12,10 @@ export const excludedRoutes: ExcludedRoutes = [
         method: 'POST',
     },
     {
+        path: match('/api/v1/auth/register'),
+        method: 'POST',
+    },
+    {
         path: match('/api/v1/auth/refresh-token'),
         method: 'POST',
     },

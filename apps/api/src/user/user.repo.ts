@@ -1,66 +1,59 @@
 import { Types } from 'mongoose';
-import { userModel } from './user.schema';
-import { IuserSchema, IuserUpdateSchema } from './user.types';
+import { UserModel, IUserDocument } from './user.schema';
 
-export type UserInsertPayload = Record<string, unknown> & {
-    password: string;
-    role: string;
-    createdBy: Types.ObjectId;
-    updatedBy: Types.ObjectId;
-    _id?: Types.ObjectId;
+// ─── Reads ────────────────────────────────────────────────────────────────────
+export const findUserByEmail = (email: string) =>
+    UserModel.findOne({ email: email.toLowerCase(), isDeleted: { $ne: true } }).exec();
+
+export const findUserByEmailWithPassword = (email: string) =>
+    UserModel.findOne({ email: email.toLowerCase() }).exec();
+
+export const findUserById = (id: string) =>
+    UserModel.findById(id).select('-password').exec();
+
+export const findUserByIdWithPassword = (id: string) =>
+    UserModel.findById(id).exec();
+
+export const findAllUsersByOrg = (organisationId: string) =>
+    UserModel.find({ organisationId, isDeleted: { $ne: true } }).select('-password').exec();
+
+export const findUserByIdInOrg = (id: string, organisationId: string) =>
+    UserModel.findOne({ _id: id, organisationId, isDeleted: { $ne: true } }).select('-password').exec();
+
+export const countUsersByOrg = (organisationId: string) =>
+    UserModel.countDocuments({ organisationId, isDeleted: { $ne: true } });
+
+// ─── Writes ───────────────────────────────────────────────────────────────────
+export const insertUser = async (data: Partial<IUserDocument>) => {
+    const user = new UserModel(data);
+    await user.save();
+    return user;
 };
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+export const updateLastLogin = (id: string) =>
+    UserModel.findByIdAndUpdate(id, { lastLoginAt: new Date() }, { new: true });
 
-export const findUser = (query: Partial<IuserSchema>) => {
-    if (!query.email) return null;
-    return userModel.findOne({ email: query.email }).select('-password').exec();
-};
+export const updateUser = (id: string, updates: Partial<IUserDocument>) =>
+    UserModel.findByIdAndUpdate(id, updates, { new: true }).select('-password').exec();
 
-export const findUserWithPassword = (query: Partial<IuserSchema>) => {
-    if (!query.email) return null;
-    return userModel.findOne({ email: query.email }).exec();
-};
-
-export const findAllUsers = () =>
-    userModel.find({ isDeleted: { $ne: true } }).select('-password').exec();
-
-export const findUserById = (userId: string) =>
-    userModel.findById(userId).select('-password').exec();
-
-export const findOne = (query: any) =>
-    userModel.findOne(query).select('-password').exec();
-
-// ─── Mutations ────────────────────────────────────────────────────────────────
-
-export const insertOne = async (newUser: UserInsertPayload) => {
-    const User = new userModel(newUser);
-    await User.save();
-    return User;
-};
-
-export const findByIdAndUpdate = (userId: string, updates: IuserUpdateSchema) =>
-    userModel.findByIdAndUpdate(userId, updates, { new: true });
-
-export const softDelete = (userId: string, deletedBy: string) =>
-    userModel.findByIdAndUpdate(
-        userId,
+export const softDeleteUser = (id: string, deletedBy: string) =>
+    UserModel.findByIdAndUpdate(
+        id,
         { isDeleted: true, updatedBy: new Types.ObjectId(deletedBy) },
         { new: true },
     );
 
-export const count = (query: Partial<IuserSchema> = {}) =>
-    userModel.countDocuments(query as any);
-
-// ─── Default export (barrel) ────────────────────────────────────────────────-─
+// ─── Barrel ───────────────────────────────────────────────────────────────────
 export default {
-    findUser,
-    findUserWithPassword,
-    findAllUsers,
+    findUserByEmail,
+    findUserByEmailWithPassword,
     findUserById,
-    findOne,
-    insertOne,
-    findByIdAndUpdate,
-    softDelete,
-    count,
+    findUserByIdWithPassword,
+    findAllUsersByOrg,
+    findUserByIdInOrg,
+    countUsersByOrg,
+    insertUser,
+    updateLastLogin,
+    updateUser,
+    softDeleteUser,
 };

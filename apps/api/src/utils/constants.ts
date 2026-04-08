@@ -1,33 +1,28 @@
-// ─── VaultStack RBAC ─────────────────────────────────────────────────────────
+// ─── VaultStack RBAC constants ────────────────────────────────────────────────
 export const VAULT_ROLES = [
-    'SYSADMIN', 'CEO', 'COO', 'CFO', 'CMO',
-    'MANAGER', 'DEVOPS', 'DEVELOPER', 'QA',
+    'SYSADMIN',
+    'CEO',
+    'COO',
+    'CFO',
+    'CMO',
+    'MANAGER',
+    'DEVOPS',
+    'DEVELOPER',
+    'QA',
 ] as const;
 
 export type VaultRole = (typeof VAULT_ROLES)[number];
 
 export const ROLE_LABELS: Record<VaultRole, string> = {
-    SYSADMIN:  'System Admin',
-    CEO:       'CEO',
-    COO:       'COO',
-    CFO:       'CFO',
-    CMO:       'CMO',
-    MANAGER:   'Manager',
-    DEVOPS:    'DevOps',
+    SYSADMIN: 'System Admin',
+    CEO: 'CEO',
+    COO: 'COO',
+    CFO: 'CFO',
+    CMO: 'CMO',
+    MANAGER: 'Manager',
+    DEVOPS: 'DevOps',
     DEVELOPER: 'Developer',
-    QA:        'QA Engineer',
-};
-
-export const ROLE_COLORS: Record<VaultRole, string> = {
-    SYSADMIN:  'vault-role--sysadmin',
-    CEO:       'vault-role--ceo',
-    COO:       'vault-role--coo',
-    CFO:       'vault-role--cfo',
-    CMO:       'vault-role--cmo',
-    MANAGER:   'vault-role--manager',
-    DEVOPS:    'vault-role--devops',
-    DEVELOPER: 'vault-role--developer',
-    QA:        'vault-role--qa',
+    QA: 'QA Engineer',
 };
 
 export const BASE_PERMISSIONS: Record<VaultRole, {
@@ -52,18 +47,6 @@ export const BASE_PERMISSIONS: Record<VaultRole, {
 };
 
 export const EXECUTIVE_ROLES: VaultRole[] = ['CEO', 'COO', 'CFO'];
-export const PRIVILEGED_ROLES: VaultRole[] = ['SYSADMIN', 'MANAGER'];
-
-// ─── API ─────────────────────────────────────────────────────────────────────
-export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5050';
-
-// ─── Routes ──────────────────────────────────────────────────────────────────
-export const ROUTES = {
-    LOGIN:     '/login',
-    DASHBOARD: '/dashboard',
-    PROJECTS:  '/projects',
-    TEAM:      '/team',
-    SETTINGS:  '/settings',
-    AUDIT:     '/audit',
-} as const;
+export const ADMIN_ROLES: VaultRole[] = ['SYSADMIN'];
+export const MANAGER_ROLES: VaultRole[] = ['MANAGER'];
+export const PRIVLEGED_ROLES: VaultRole[] = ['SYSADMIN', 'MANAGER'];
