@@ -56,7 +56,9 @@ export const PRIVILEGED_ROLES: VaultRole[] = ['SYSADMIN', 'MANAGER'];
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5050';
+    typeof window !== 'undefined'
+        ? '' // Use absolute URL on server, relative path on client for rewriting
+        : process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5050';
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 export const ROUTES = {
