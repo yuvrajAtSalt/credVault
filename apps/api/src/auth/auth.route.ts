@@ -89,7 +89,7 @@ authRouter.post('/refresh-token', async (req, res, next) => {
 const inviteSchema = z.object({
     name:        z.string().min(1),
     email:       z.string().email(),
-    role:        z.enum(VAULT_ROLES),
+    role:        z.enum([...VAULT_ROLES] as [string, ...string[]]),
     reportingTo: z.string().optional(),
 });
 

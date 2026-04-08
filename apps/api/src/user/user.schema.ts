@@ -47,16 +47,15 @@ const userSchema = new Schema<IUserDocument>(
 );
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ organisationId: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ reportingTo: 1 });
 
+
 // ─── Pre-save: hash password on change (cost 12) ────────────────────────────
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
+userSchema.pre('save', async function () {
+    if (!this.isModified('password')) return;
     this.password = await hash(this.password, 12);
-    next();
 });
 
 // ─── Method: comparePassword ─────────────────────────────────────────────────

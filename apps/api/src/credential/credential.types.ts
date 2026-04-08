@@ -8,13 +8,13 @@ export const credentialSchemaType = z.object({
     _id: z.string().optional(),
     projectId: z.string(),
     organisationId: z.string(),
-    category: z.enum(CREDENTIAL_CATEGORIES),
+    category: z.enum([...CREDENTIAL_CATEGORIES] as [string, ...string[]]),
     label: z.string().min(1),
     value: z.string().min(1),       // AES-256 encrypted at rest (Phase 03)
     isSecret: z.boolean().default(true),
-    environment: z.enum(CREDENTIAL_ENVIRONMENTS).default('all'),
+    environment: z.enum([...CREDENTIAL_ENVIRONMENTS] as [string, ...string[]]).default('all'),
     addedBy: z.string(),
-    addedByRole: z.enum(VAULT_ROLES),
+    addedByRole: z.enum([...VAULT_ROLES] as [string, ...string[]]),
     lastEditedBy: z.string().optional(),
     lastEditedAt: z.date().optional(),
     isDeleted: z.boolean().default(false),
@@ -24,11 +24,11 @@ export type ICredentialSchema = z.infer<typeof credentialSchemaType>;
 
 export const createCredentialSchema = z.object({
     projectId: z.string().min(1, 'Project ID is required'),
-    category: z.enum(CREDENTIAL_CATEGORIES),
+    category: z.enum([...CREDENTIAL_CATEGORIES] as [string, ...string[]]),
     label: z.string().min(1, 'Label is required'),
     value: z.string().min(1, 'Value is required'),
     isSecret: z.boolean().optional(),
-    environment: z.enum(CREDENTIAL_ENVIRONMENTS).optional(),
+    environment: z.enum([...CREDENTIAL_ENVIRONMENTS] as [string, ...string[]]).optional(),
 });
 
 export type ICreateCredentialSchema = z.infer<typeof createCredentialSchema>;

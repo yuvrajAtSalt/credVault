@@ -9,7 +9,7 @@ export const createUser = async (
     userData: Partial<IuserSchema>,
     createdBy?: string,
 ) => {
-    const existing = await userRepo.findUser({ email: userData.email });
+    const existing = await userRepo.findUserByEmail(userData.email!);
     if (existing) throw userResponses.USER_ALREADY_EXISTS;
 
     const hashedPassword = await hash(userData.password!, 10);
@@ -17,7 +17,7 @@ export const createUser = async (
     const newUserId = new Types.ObjectId();
     const actorId = createdBy ? new Types.ObjectId(createdBy) : newUserId;
 
-    const newUser = await userRepo.insertOne({
+    const newUser = await userRepo.insertUser({
         ...userData,
         _id: newUserId,
         password: hashedPassword,
@@ -34,8 +34,19 @@ export const createUser = async (
 };
 
 // ─── getAllUsers ───────────────────────────────────────────────────────────────
-export const getAllUsers = async () => {
-    const users = await userRepo.findAllUsers();
+export const getAllUsers = async (organisationId?: string, search?: string) => {
+    let users;
+    if (organisationId) {
+        users = await userRepo.findAllUsersByOrg(organisationId);
+        if (search) {
+            const q = search.toLowerCase();
+            users = (users as any[]).filter(
+                (u: any) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+            );
+        }
+    } else {
+        users = await userRepo.findAllUsersByOrg('');
+    }
     return {
         statusCode: 200,
         message: userResponses.USERS_FETCHED_SUCCESSFULLY.message,
@@ -59,7 +70,7 @@ export const updateUser = async (userId: string, updates: IuserUpdateSchema) => 
     const user = await userRepo.findUserById(userId);
     if (!user) throw userResponses.USER_NOT_FOUND;
 
-    const updated = await userRepo.findByIdAndUpdate(userId, updates);
+    const updated = await userRepo.updateUser(userId, updates);
     return {
         statusCode: 200,
         message: userResponses.USER_UPDATED_SUCCESSFULLY.message,
@@ -72,7 +83,7 @@ export const deleteUser = async (userId: string, requesterId: string) => {
     const user = await userRepo.findUserById(userId);
     if (!user) throw userResponses.USER_NOT_FOUND;
 
-    await userRepo.softDelete(userId, requesterId);
+    await userRepo.softDeleteUser(userId, requesterId);
     return {
         statusCode: 200,
         message: userResponses.USER_DELETED_SUCCESSFULLY.message,

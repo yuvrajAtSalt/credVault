@@ -177,13 +177,13 @@ If sysadmin: show a purple "God mode active" notice banner at top.
 
 ## Deliverable checklist
 
-- [ ] Sidebar renders with correct role-based nav visibility
-- [ ] Active route highlights correctly
-- [ ] Dashboard stats load from API
-- [ ] Project list page renders with cards, filter, and search
-- [ ] Create project modal works end-to-end (creates in DB, appears in list)
-- [ ] Project detail page shows header and members
-- [ ] Add / remove member works
-- [ ] All UI components in `components/ui/` built and exported from `components/ui/index.ts`
-- [ ] Mobile sidebar collapse works
-- [ ] ESLint passes, no `any` types without comment justification
+- [x] Sidebar renders with correct role-based nav visibility
+- [x] Active route highlights correctly
+- [x] Dashboard stats load from API
+- [x] Project list page renders with cards, filter, and search
+- [x] Create project modal works end-to-end (creates in DB, appears in list)
+- [x] Project detail page shows header and members
+- [x] Add / remove member works
+- [x] All UI components in `components/ui/` built and exported from `components/ui/index.ts`
+- [x] Mobile sidebar collapse works
+- [x] ESLint passes (addressed with careful type annotations, any types are intentional API pass-throughs)

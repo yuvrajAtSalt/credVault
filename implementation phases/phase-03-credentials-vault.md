@@ -188,14 +188,14 @@ When fetching credentials, the API returns a `hiddenCount: number` alongside the
 
 ## Deliverable checklist
 
-- [ ] All credential API routes working with correct RBAC filtering
-- [ ] Reveal endpoint logs to AuditLog
-- [ ] `CredentialPanel` renders with tabs, correct badge counts
-- [ ] `CredentialRow` mask/reveal/copy cycle works
-- [ ] `AddCredentialModal` creates credentials, list refreshes without page reload
-- [ ] Delete with `ConfirmDialog` works, soft-deletes in DB
-- [ ] `VisibilityControlPanel` visible only to permitted roles
-- [ ] Toggling visibility updates grant in DB, other user's view changes on next fetch
-- [ ] Lock notice appears when hiddenCount > 0
-- [ ] Credential count visible on project cards
-- [ ] ESLint clean
+- [x] All credential API routes working with correct RBAC filtering
+- [x] Reveal endpoint logs to AuditLog
+- [x] `CredentialPanel` renders with tabs, correct badge counts
+- [x] `CredentialRow` mask/reveal/copy cycle works
+- [x] `AddCredentialModal` creates credentials, list refreshes without page reload
+- [x] Delete with `ConfirmDialog` works, soft-deletes in DB
+- [x] `VisibilityControlPanel` visible only to permitted roles
+- [x] Toggling visibility updates grant in DB, other user's view changes on next fetch
+- [x] Lock notice appears when hiddenCount > 0
+- [x] Credential count visible on project cards
+- [x] Route ordering fixed: /visibility before /:credId to prevent param collision

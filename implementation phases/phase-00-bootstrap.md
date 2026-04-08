@@ -190,10 +190,10 @@ export const BASE_PERMISSIONS: Record<Role, {
 
 ## Deliverable checklist
 
-- [ ] Project boots with `npm run dev` without errors
-- [ ] ESLint passes with zero warnings
-- [ ] Tailwind compiles correctly with vault color tokens
-- [ ] Folder structure matches the spec above
-- [ ] `lib/constants.ts` exports ROLES, ROLE_LABELS, BASE_PERMISSIONS
-- [ ] `.env.local.example` present
-- [ ] `README.md` documents local setup steps
+- [x] Project boots with `npm run dev` without errors
+- [x] ESLint passes with zero warnings
+- [x] Tailwind compiles correctly with vault color tokens
+- [x] Folder structure matches the spec above
+- [x] `lib/constants.ts` exports ROLES, ROLE_LABELS, BASE_PERMISSIONS
+- [x] `.env.local.example` present
+- [x] `README.md` documents local setup steps

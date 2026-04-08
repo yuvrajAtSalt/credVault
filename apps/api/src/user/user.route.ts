@@ -6,10 +6,11 @@ import userService from './user.service';
 
 const userRouter = Router();
 
-// GET /api/v1/user — all users (SYSADMIN only in Phase 03)
-userRouter.get('/', async (_req, res, next) => {
+// GET /api/v1/users?search= — search users in org
+userRouter.get('/', async (req: any, res, next) => {
     try {
-        const result = await userService.getAllUsers();
+        const search = req.query.search as string | undefined;
+        const result = await userService.getAllUsers(String(req.currentUser.organisationId), search);
         res.status(result.statusCode).send(new ResponseHandler(result));
     } catch (e) {
         next(e);
@@ -58,4 +59,4 @@ userRouter.delete('/:id', async (req: any, res, next) => {
     }
 });
 
-export default new Route('/api/v1/user', userRouter);
+export default new Route('/api/v1/users', userRouter);

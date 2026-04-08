@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import { API_BASE_URL } from '@/lib/constants';
 
-export default function LoginPage() {
+// ── Inner form — uses useSearchParams() so must be inside <Suspense> ──────────
+function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { setAuth } = useAuth();
@@ -31,7 +32,7 @@ export default function LoginPage() {
 
             const json = await res.json();
 
-            if (!res.ok || json.error) {
+            if (!res.ok) {
                 setError(json.error?.message || 'Invalid email or password.');
                 return;
             }
@@ -77,7 +78,7 @@ export default function LoginPage() {
                         </svg>
                     </div>
                     <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--vault-ink)', marginBottom: '4px' }}>
-                        VaultStack
+                        Cred Vault
                     </h1>
                     <p style={{ fontSize: '14px', color: 'var(--vault-ink-muted)' }}>
                         Sign in to your workspace
@@ -204,5 +205,18 @@ export default function LoginPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+// ── Page shell — wraps LoginForm in Suspense as required by Next.js ───────────
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--vault-surface)' }}>
+                <p style={{ color: 'var(--vault-ink-muted)', fontSize: 14 }}>Loading…</p>
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     );
 }

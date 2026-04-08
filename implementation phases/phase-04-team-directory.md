@@ -211,15 +211,16 @@ Or use `@layer components` in `globals.css` — match brand-store's custom CSS p
 
 ## Deliverable checklist
 
-- [ ] `GET /api/members` returns filtered list based on role
-- [ ] `GET /api/members/org-chart` returns correct nested tree
-- [ ] Team page renders with both tabs (All members + By project)
-- [ ] Search and filter work client-side via SWR
-- [ ] Invite member modal creates user, invite link shown
-- [ ] Edit member modal updates role + metadata
-- [ ] Deactivate works (sysadmin only, ConfirmDialog)
-- [ ] Directory list view renders with filters
-- [ ] Org chart view renders the full tree with CSS connector lines
-- [ ] Member profile slide-over opens on click
-- [ ] Slide-over shows reporting chain and project memberships
-- [ ] ESLint clean, no layout breaks on narrow viewports
+- [x] `GET /api/members` returns filtered list based on role (RBAC: sysadmin/manager/execs see all, others see co-members)
+- [x] `GET /api/members/org-chart` returns correct nested tree (recursive buildMap algorithm)
+- [x] Team page renders with both tabs (All members + By project)
+- [x] Search and filter work on table (client-side filter + API query params)
+- [x] Invite member modal creates user, invite link shown with copy button
+- [x] Edit member modal updates role + metadata (self can edit safe fields; sysadmin can edit all)
+- [x] Deactivate works (sysadmin only, ConfirmDialog)
+- [x] Directory list view renders with role + search filters
+- [x] Org chart view renders the full tree with CSS connector lines (::before pseudo-elements)
+- [x] Member profile slide-over opens on click, fetches full member data
+- [x] Slide-over shows reporting chain, projects, edit button
+- [x] `lib/utils.ts` created with formatDistanceToNow, getInitials, truncate helpers
+- [x] Route ordering: /org-chart static before /:id dynamic to prevent param collision

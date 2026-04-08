@@ -199,10 +199,10 @@ Match brand-store's form field component patterns for inputs.
 
 ## Deliverable checklist
 
-- [ ] All 5 models created with correct indexes and pre-save hooks
-- [ ] `lib/db.ts` singleton works without duplicate connection warnings in dev
-- [ ] Login, logout, me, invite routes functional
-- [ ] `middleware.ts` redirects unauthenticated users from dashboard routes
-- [ ] `hooks/usePermissions.ts` returns correct booleans for each role
-- [ ] Login page renders correctly, no Tailwind errors
-- [ ] ESLint passes
+- [x] All 5 models created with correct indexes and pre-save hooks
+- [x] `lib/db.ts` singleton works without duplicate connection warnings in dev
+- [x] Login, logout, me, invite routes functional
+- [x] `middleware.ts` redirects unauthenticated users from dashboard routes
+- [x] `hooks/usePermissions.ts` returns correct booleans for each role
+- [x] Login page renders correctly, no Tailwind errors
+- [x] ESLint passes

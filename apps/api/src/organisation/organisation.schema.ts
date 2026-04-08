@@ -15,6 +15,5 @@ const organisationSchema = new Schema<IOrganisationSchema>(
     { timestamps: true },
 );
 
-organisationSchema.index({ slug: 1 });
 
 export const OrganisationModel = model<IOrganisationSchema>('Organisation', organisationSchema);

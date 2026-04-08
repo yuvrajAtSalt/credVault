@@ -11,11 +11,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "VaultStack",
-    template: "%s | VaultStack",
+    default: "Cred Vault",
+    template: "%s | Cred Vault",
   },
   description: "Secure project credentials manager for your team.",
-  applicationName: "VaultStack",
+  applicationName: "Cred Vault",
   robots: { index: false, follow: false },  // internal tool — no indexing
 };
 
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body className={inter.variable}>
         <AuthProvider>{children}</AuthProvider>
       </body>

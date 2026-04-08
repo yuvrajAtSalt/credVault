@@ -200,15 +200,35 @@
 
   /* ── Main content shell ──────────────────────────────── */
   .vault-shell {
+    flex: 1;
+    min-width: 0;
     margin-left: var(--vault-sidebar-width);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    transition: margin-left var(--vault-transition-base);
   }
 
   .vault-page {
     padding: 24px 28px;
     flex: 1;
+  }
+
+  /* ── Mobile Sidebar ───────────────────────────────────── */
+  @media (max-width: 768px) {
+    .vault-sidebar {
+      transform: translateX(-100%);
+    }
+    .vault-sidebar.is-open {
+      transform: translateX(0);
+      box-shadow: 2px 0 12px rgba(0,0,0,0.3);
+    }
+    .vault-shell {
+      margin-left: 0;
+    }
+    .vault-page {
+      padding: 16px;
+    }
   }
 
   /* ── Card ────────────────────────────────────────────── */
@@ -361,5 +381,54 @@
 
   .vault-animate-in {
     animation: vaultSlideUp 180ms ease;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── Org chart tree ──────────────────────────────────────────────── */
+  .org-node {
+    position: relative;
+    margin-bottom: 4px;
+  }
+
+  .org-node__card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--vault-bg);
+    border: 1px solid var(--vault-border);
+    border-radius: var(--vault-radius-md);
+    box-shadow: var(--vault-shadow-card);
+    cursor: pointer;
+    max-width: 280px;
+    transition: box-shadow var(--vault-transition-fast);
+  }
+
+  .org-node__card:hover {
+    box-shadow: var(--vault-shadow-raised);
+  }
+
+  .org-children {
+    position: relative;
+    padding-left: 32px;
+    margin-top: 4px;
+    border-left: 1px solid var(--vault-border);
+  }
+
+  .org-node--child {
+    position: relative;
+    padding-top: 4px;
+  }
+
+  .org-node--child::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: -32px;
+    width: 32px;
+    border-top: 1px solid var(--vault-border);
   }
 }

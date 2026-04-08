@@ -18,10 +18,10 @@ export const auditLogSchemaType = z.object({
     _id: z.string().optional(),
     organisationId: z.string(),
     actorId: z.string(),
-    action: z.enum(AUDIT_ACTIONS),
+    action: z.enum([...AUDIT_ACTIONS] as [string, ...string[]]),
     targetType: z.string().optional(),   // 'Credential' | 'Project' | 'User'
     targetId: z.string().optional(),
-    meta: z.record(z.unknown()).optional(),
+    meta: z.record(z.string(), z.unknown()).optional(),
     ipAddress: z.string().optional(),
 });
 

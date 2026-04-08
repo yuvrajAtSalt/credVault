@@ -71,3 +71,13 @@ Before writing any code for VaultStack, read the brand-store source code and mir
 Only then proceed with the phase instructions below.
 Do not use any library that brand-store does not already use unless the phase prompt explicitly introduces a new one.
 ```
+
+---
+
+## Local Setup Steps
+
+1. Copy `.env.local.example` to `.env.local` in the root folder, and `.env.example` in `apps/api` and `apps/web` to `.env`.
+2. Update the environment variables in `.env` and `.env.local` files to match your local setup components.
+3. Install dependencies from the root folder: `pnpm install`
+4. Start the development server from the root folder: `pnpm dev`
+5. The API server will be running on `http://localhost:5050` and the Next.js web application on `http://localhost:3050`.
