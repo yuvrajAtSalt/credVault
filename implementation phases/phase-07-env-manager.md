@@ -410,24 +410,24 @@ Or if the sidebar doesn't expand per-project, just ensure "Environments" is reac
 
 ## Deliverable checklist
 
-- [ ] `Environment` and `EnvVariable` models created with correct indexes and unique constraints
-- [ ] All environment CRUD routes functional
-- [ ] All variable CRUD routes functional including bulk upsert
-- [ ] Key validation (`^[A-Z][A-Z0-9_]*$`) enforced on API and UI
-- [ ] Values encrypted at rest using `lib/crypto.ts` from Phase 06
-- [ ] Reveal endpoint decrypts and logs to AuditLog
-- [ ] Export endpoint returns correct file format with correct headers for all 3 formats
-- [ ] Compare endpoint returns correct diff (no values leaked)
-- [ ] UI: environment pill tabs render, switch environments correctly
-- [ ] UI: variable list grouped by group, collapsible
-- [ ] UI: inline edit works (edit value in-place, save/cancel)
-- [ ] UI: reveal / mask / copy cycle works
-- [ ] UI: Add variable modal enforces uppercase key validation
-- [ ] UI: Paste .env modal parses correctly and shows preview
-- [ ] UI: Export dropdown triggers correct format download
-- [ ] UI: Compare modal shows diff table with correct color coding
-- [ ] UI: Add environment modal clones variables when selected
-- [ ] Base environment key sync indicators appear for missing keys
-- [ ] AuditLog entries written for all env variable actions
-- [ ] RBAC visibility rules apply (same as credentials)
-- [ ] ESLint clean, `npm run build` passes
+- [x] `Environment` and `EnvVariable` models created with correct indexes and unique constraints
+- [x] All environment CRUD routes functional
+- [x] All variable CRUD routes functional including bulk upsert
+- [x] Key validation (`^[A-Z][A-Z0-9_]*$`) enforced on API and UI
+- [x] Values encrypted at rest using `lib/crypto.ts` from Phase 06
+- [x] Reveal endpoint decrypts and logs to AuditLog
+- [x] Export endpoint returns correct file format with correct headers for all 3 formats
+- [x] Compare endpoint returns correct diff (no values leaked)
+- [x] UI: environment pill tabs render, switch environments correctly
+- [x] UI: variable list grouped by group, collapsible
+- [x] UI: inline edit works (edit value in-place, save/cancel)
+- [x] UI: reveal / mask / copy cycle works
+- [x] UI: Add variable modal enforces uppercase key validation
+- [x] UI: Paste .env modal parses correctly and shows preview
+- [x] UI: Export dropdown triggers correct format download
+- [x] UI: Compare modal shows diff table with correct color coding
+- [x] UI: Add environment modal clones variables when selected
+- [x] Base environment key sync indicators appear for missing keys
+- [x] AuditLog entries written for all env variable actions
+- [x] RBAC visibility rules apply (same as credentials)
+- [x] ESLint clean, `npm run build` passes

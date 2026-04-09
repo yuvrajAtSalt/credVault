@@ -2,7 +2,8 @@ import { Types } from 'mongoose';
 import credentialRepo from './credential.repo';
 import projectRepo from '../project/project.repo';
 import { writeAuditLog } from '../audit/audit.repo';
-import { BASE_PERMISSIONS, EXECUTIVE_ROLES } from '../utils/constants';
+import { BASE_PERMISSIONS } from '../utils/constants';
+import { encrypt, decrypt } from '../utils/crypto';
 import type { VaultRole } from '../utils/constants';
 
 // ─── Visibility helper ────────────────────────────────────────────────────────
@@ -92,7 +93,16 @@ export const reveal = async (projectId: string, credId: string, currentUser: any
         meta: { label: (cred as any).label },
     });
 
-    return { statusCode: 200, message: 'CREDENTIAL REVEALED', data: { value: (cred as any).value } };
+    // Decrypt the value before returning
+    let plainValue: string;
+    try {
+        plainValue = decrypt((cred as any).value);
+    } catch {
+        // Fallback: return raw value if not encrypted (migration period)
+        plainValue = (cred as any).value;
+    }
+
+    return { statusCode: 200, message: 'CREDENTIAL REVEALED', data: { value: plainValue } };
 };
 
 // ─── create ───────────────────────────────────────────────────────────────────
@@ -115,7 +125,7 @@ export const create = async (
         organisationId: String(currentUser.organisationId),
         category: body.category,
         label: body.label,
-        value: body.value,
+        value: encrypt(body.value),  // AES-256-GCM encrypted at rest
         isSecret: body.isSecret ?? true,
         environment: body.environment ?? 'all',
         addedBy: String(currentUser._id),
@@ -148,11 +158,14 @@ export const update = async (
     const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
     if (!isOwner && !isPrivileged) throw { statusCode: 403, message: 'FORBIDDEN' };
 
-    const updated = await credentialRepo.update(credId, {
+    const patch: Record<string, any> = {
         ...body,
         lastEditedBy: new Types.ObjectId(String(currentUser._id)),
         lastEditedAt: new Date(),
-    });
+    };
+    if (body.value) patch.value = encrypt(body.value); // Re-encrypt updated value
+
+    const updated = await credentialRepo.update(credId, patch);
 
     return { statusCode: 200, message: 'CREDENTIAL UPDATED', data: updated };
 };

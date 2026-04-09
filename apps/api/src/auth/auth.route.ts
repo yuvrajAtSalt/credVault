@@ -8,6 +8,7 @@ import { validateToken } from '../utils/validate-token';
 import { body } from '../utils/validator';
 import { z } from 'zod';
 import { VAULT_ROLES } from '../utils/constants';
+import { loginRateLimiter, inviteRateLimiter } from '../utils/rateLimit';
 
 const authRouter = Router();
 
@@ -38,7 +39,7 @@ authRouter.post('/register', body(registerSchema), async (req, res, next) => {
 });
 
 // ─── POST /api/v1/auth/login ──────────────────────────────────────────────────
-authRouter.post('/login', ...loginValidations, async (req, res, next) => {
+authRouter.post('/login', loginRateLimiter, ...loginValidations, async (req, res, next) => {
     try {
         const ip = req.ip || req.socket?.remoteAddress;
         const result = await authService.login(req.body, ip);
@@ -93,13 +94,26 @@ const inviteSchema = z.object({
     reportingTo: z.string().optional(),
 });
 
-authRouter.post('/invite', body(inviteSchema), async (req: any, res, next) => {
+authRouter.post('/invite', body(inviteSchema), inviteRateLimiter, async (req: any, res, next) => {
     try {
         const role: string = req.currentUser?.role;
         if (!['SYSADMIN', 'MANAGER'].includes(role)) {
             return next({ statusCode: 403, message: 'FORBIDDEN — MANAGER OR SYSADMIN REQUIRED' });
         }
         const result = await authService.invite(req.body, req.currentUser);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
+// ─── POST /api/v1/auth/change-password ───────────────────────────────────────
+const changePwSchema = z.object({
+    currentPassword: z.string().min(1),
+    newPassword:     z.string().min(8, 'New password must be at least 8 characters'),
+});
+
+authRouter.post('/change-password', body(changePwSchema), async (req: any, res, next) => {
+    try {
+        const result = await authService.changePassword(String(req.currentUser._id), req.body);
         res.status(result.statusCode).send(new ResponseHandler(result));
     } catch (e) { next(e); }
 });

@@ -6,8 +6,14 @@ import userRoutes from '../user/user.route';
 import memberRoutes from '../user/member.route';
 import projectRoutes from '../project/project.route';
 import credentialRoutes from '../credential/credential.route';
+import auditRoutes from '../audit/audit.route';
+import orgRoutes from '../organisation/organisation.route';
+import envRoutes from '../env/env.route';
+import orgHierarchyRoutes from '../org/org.route';
 
-export const routes: Route[] = [authRoutes, userRoutes, memberRoutes, projectRoutes, credentialRoutes];
+export const routes: Route[] = [authRoutes, userRoutes, memberRoutes, projectRoutes, credentialRoutes, auditRoutes, orgRoutes, envRoutes, orgHierarchyRoutes];
+
+
 
 export const excludedRoutes: ExcludedRoutes = [
     {

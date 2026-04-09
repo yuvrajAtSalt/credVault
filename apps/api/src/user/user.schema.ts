@@ -13,6 +13,8 @@ export interface IUserDocument {
     department?: string;
     avatarUrl?: string;
     reportingTo?: any;
+    teamId?: any;          // which team this user belongs to
+    isOrgRoot: boolean;    // true for the top-level person (CEO / founder)
     isActive: boolean;
     invitedBy?: any;
     lastLoginAt?: Date;
@@ -36,6 +38,8 @@ const userSchema = new Schema<IUserDocument>(
         department:     { type: String },
         avatarUrl:      { type: String },
         reportingTo:    { type: Schema.Types.ObjectId, ref: 'User', default: null },
+        teamId:         { type: Schema.Types.ObjectId as any, ref: 'Team', default: null },
+        isOrgRoot:      { type: Boolean, default: false },
         isActive:       { type: Boolean, default: true },
         invitedBy:      { type: Schema.Types.ObjectId, ref: 'User', default: null },
         lastLoginAt:    { type: Date },
@@ -50,6 +54,8 @@ const userSchema = new Schema<IUserDocument>(
 userSchema.index({ organisationId: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ reportingTo: 1 });
+userSchema.index({ teamId: 1 });
+userSchema.index({ organisationId: 1, isOrgRoot: 1 });
 
 
 // ─── Pre-save: hash password on change (cost 12) ────────────────────────────

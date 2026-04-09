@@ -432,3 +432,56 @@
     border-top: 1px solid var(--vault-border);
   }
 }
+
+/* ─── Skeleton Animation ────────────────────────────────────────────────────── */
+@keyframes skeletonPulse {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Responsive — Mobile Polish ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Sidebar hidden off-screen by default on mobile */
+  .vault-sidebar {
+    transform: translateX(-100%);
+  }
+  .vault-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  /* Shell content takes full width on mobile */
+  .vault-shell {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Tables — horizontal scroll on mobile */
+  .vault-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modals — full screen on mobile */
+  .vault-modal-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    min-height: 100vh !important;
+  }
+
+  /* Org chart — allow horizontal scroll */
+  .org-chart-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Stack credential rows on small screens */
+  .credential-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+}

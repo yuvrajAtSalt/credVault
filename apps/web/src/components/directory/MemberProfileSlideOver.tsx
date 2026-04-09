@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -28,6 +29,18 @@ interface Props {
 }
 
 export function MemberProfileSlideOver({ member, onClose, onEdit, canEdit }: Props) {
+    const [chain, setChain] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!member) {
+            setChain([]);
+            return;
+        }
+        api.get<any>(`/api/v1/org/members/${member._id}/chain`).then(({ data }) => {
+            setChain(data?.data?.data?.chain ?? []);
+        });
+    }, [member]);
+
     // Close on Escape
     useEffect(() => {
         if (!member) return;
@@ -97,15 +110,20 @@ export function MemberProfileSlideOver({ member, onClose, onEdit, canEdit }: Pro
                     </div>
 
                     {/* Reporting chain */}
-                    {member.reportingTo && (
+                    {chain.length > 0 && (
                         <div>
-                            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--vault-ink-subtle)', marginBottom: 8 }}>Reports to</p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--vault-surface)', borderRadius: 6 }}>
-                                <Avatar name={member.reportingTo.name} size="sm" />
-                                <div>
-                                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--vault-ink)', margin: 0 }}>{member.reportingTo.name}</p>
-                                    <p style={{ fontSize: 11, color: 'var(--vault-ink-muted)', margin: 0 }}>{ROLE_LABELS[member.reportingTo.role]}</p>
-                                </div>
+                            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--vault-ink-subtle)', marginBottom: 8 }}>Reporting chain</p>
+                            <div style={{ background: 'var(--vault-surface)', borderRadius: 6, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {[...chain].reverse().map((c, i) => (
+                                    <div key={c._id} style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: i * 12 }}>
+                                        <span style={{ fontSize: 10, color: 'var(--vault-ink-subtle)' }}>{'└─'.repeat(Math.min(i, 1))}</span>
+                                        <Avatar name={c.name} size="sm" />
+                                        <div>
+                                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--vault-ink)', margin: 0 }}>{c.name}</p>
+                                            <p style={{ fontSize: 11, color: 'var(--vault-ink-muted)', margin: 0 }}>{ROLE_LABELS[c.role as VaultRole] ?? c.role}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}

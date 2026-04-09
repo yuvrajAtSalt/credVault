@@ -5,7 +5,7 @@ import { Input, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { MemberProfileCard } from '@/components/directory/MemberProfileCard';
 import { MemberProfileSlideOver } from '@/components/directory/MemberProfileSlideOver';
-import { OrgNode } from '@/components/directory/OrgNode';
+import { OrgTreeRenderer } from '@/components/directory/OrgTreeRenderer';
 import { EditMemberModal } from '@/components/team/EditMemberModal';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -37,10 +37,12 @@ export default function DirectoryPage() {
 
     const [view, setView]             = useState<'grid' | 'chart'>('grid');
     const [members, setMembers]       = useState<Member[]>([]);
-    const [orgTree, setOrgTree]       = useState<any[]>([]);
+    const [orgTree, setOrgTree]       = useState<any>({ roots: [], unassigned: [] });
+    const [teams, setTeams]           = useState<any[]>([]);
     const [loading, setLoading]       = useState(true);
     const [search, setSearch]         = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const [teamFilter, setTeamFilter] = useState('');
     const [selected, setSelected]     = useState<Member | null>(null);
     const [editTarget, setEditTarget] = useState<Member | null>(null);
 
@@ -54,11 +56,16 @@ export default function DirectoryPage() {
     }, []);
 
     const fetchOrgChart = useCallback(async () => {
-        const { data } = await api.get<any>('/api/v1/members/org-chart');
-        setOrgTree((data as any)?.data?.tree ?? []);
+        const { data } = await api.get<any>('/api/v1/org/chart');
+        setOrgTree((data as any)?.data?.data ?? { roots: [], unassigned: [] });
     }, []);
 
-    useEffect(() => { fetchMembers(); }, [fetchMembers]);
+    const fetchTeams = useCallback(async () => {
+        const { data } = await api.get<any>('/api/v1/org/teams');
+        setTeams(data?.data?.data ?? []);
+    }, []);
+
+    useEffect(() => { fetchMembers(); fetchTeams(); }, [fetchMembers, fetchTeams]);
     useEffect(() => { if (view === 'chart') fetchOrgChart(); }, [view, fetchOrgChart]);
 
     const handleSelectMember = async (node: any) => {
@@ -75,7 +82,9 @@ export default function DirectoryPage() {
             (m.jobTitle ?? '').toLowerCase().includes(q) ||
             (m.department ?? '').toLowerCase().includes(q);
         const matchRole = !roleFilter || m.role === roleFilter;
-        return matchSearch && matchRole;
+        // In grid view we assume member has teamId populated as an object, or we compare by .teamId itself vs teamFilter which is team's name
+        const matchTeam = !teamFilter || (m as any).team?.name === teamFilter || (m as any).teamId?.name === teamFilter;
+        return matchSearch && matchRole && matchTeam;
     });
 
     return (
@@ -123,6 +132,31 @@ export default function DirectoryPage() {
                             options={ROLE_OPTIONS}
                         />
                     </div>
+                    <div style={{ minWidth: 160 }}>
+                        <Select
+                            value={teamFilter}
+                            onChange={(e) => setTeamFilter(e.target.value)}
+                            options={[
+                                { value: '', label: 'All teams' },
+                                ...teams.map(t => ({ value: t.name, label: t.name })),
+                            ]}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {view === 'chart' && (
+                <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                    <div style={{ minWidth: 200 }}>
+                        <Select
+                            value={teamFilter}
+                            onChange={(e) => setTeamFilter(e.target.value)}
+                            options={[
+                                { value: '', label: 'Filter by team…' },
+                                ...teams.map(t => ({ value: t.name, label: t.name })),
+                            ]}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -152,15 +186,13 @@ export default function DirectoryPage() {
             ) : (
                 // Org chart view
                 <div style={{ overflowX: 'auto', paddingBottom: 32 }}>
-                    {orgTree.length === 0 ? (
-                        <p style={{ color: 'var(--vault-ink-subtle)', fontSize: 13 }}>No org chart data yet. Set reporting relationships to build the tree.</p>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingLeft: 8 }}>
-                            {orgTree.map((root) => (
-                                <OrgNode key={root._id} node={root} onSelect={handleSelectMember} />
-                            ))}
-                        </div>
-                    )}
+                    <OrgTreeRenderer
+                        roots={orgTree.roots}
+                        unassigned={orgTree.unassigned}
+                        onSelect={handleSelectMember}
+                        highlightTeam={teamFilter}
+                        editable={false}
+                    />
                 </div>
             )}
 

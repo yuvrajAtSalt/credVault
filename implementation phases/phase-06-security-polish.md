@@ -205,16 +205,16 @@ Update `README.md` with:
 
 ## Deliverable checklist
 
-- [ ] All credentials encrypted in DB (AES-256-GCM)
-- [ ] Decrypt on reveal endpoint works correctly
-- [ ] Migration script runs without errors on existing data
-- [ ] Rate limiting active on login + reveal routes
-- [ ] All API bodies validated with Zod schemas
-- [ ] Security headers present in `next.config.js`
-- [ ] App is fully usable at 375px mobile width
-- [ ] Skeleton loaders on all major data-fetch areas
-- [ ] Error boundary catches render errors gracefully
+- [x] All credentials encrypted in DB (AES-256-GCM)
+- [x] Decrypt on reveal endpoint works correctly
+- [x] Migration script runs without errors on existing data
+- [x] Rate limiting active on login + reveal routes
+- [x] All API bodies validated with Zod schemas
+- [x] Security headers present in `next.config.js`
+- [x] App is fully usable at 375px mobile width
+- [x] Skeleton loaders on all major data-fetch areas
+- [x] Error boundary catches render errors gracefully
 - [ ] Test suite passes (`npm run test`)
-- [ ] `README.md` complete with setup instructions
-- [ ] `npm run build` completes with zero TypeScript errors
-- [ ] ESLint zero warnings
+- [x] `README.md` complete with setup instructions
+- [x] `npm run build` completes with zero TypeScript errors
+- [x] ESLint zero warnings

@@ -191,4 +191,21 @@ export const invite = async (body: { name: string; email: string; role: VaultRol
     };
 };
 
-export default { register, login, me, logout, refreshToken, invite };
+// ─── changePassword ──────────────────────────────────────────────────────────
+export const changePassword = async (userId: string, body: { currentPassword: string; newPassword: string }) => {
+    const { currentPassword, newPassword } = body;
+
+    const { UserModel } = await import('../user/user.schema');
+    const fullUser = await UserModel.findById(userId).select('+password').lean();
+    if (!fullUser) throw authResponses.USER_NOT_FOUND;
+
+    const isValid = await compare(currentPassword, (fullUser as any).password);
+    if (!isValid) throw { statusCode: 400, message: 'CURRENT PASSWORD IS INCORRECT' };
+
+    const hashed = await hash(newPassword, 12);
+    await UserModel.findByIdAndUpdate(userId, { password: hashed });
+
+    return { statusCode: 200, message: 'PASSWORD CHANGED SUCCESSFULLY', data: null };
+};
+
+export default { register, login, me, logout, refreshToken, invite, changePassword };

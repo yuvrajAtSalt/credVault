@@ -166,16 +166,16 @@ Every list/table should have a well-designed empty state:
 
 ## Deliverable checklist
 
-- [ ] Permissions matrix page renders correct ✓/— for all 9 roles × 8 permissions
-- [ ] Role legend cards render below the matrix
-- [ ] Audit log table renders with paginated data from DB
-- [ ] Audit log filters (action, actor, date range) work
-- [ ] Row expand shows meta JSON
-- [ ] Organisation settings form saves name, logo, hierarchy order
-- [ ] Drag-to-reorder hierarchy works and persists
-- [ ] Profile settings form saves jobTitle, department, avatar
-- [ ] Password change works (verify old → hash new → save)
-- [ ] Toast system works for success/error/info/warning
-- [ ] All list pages have proper empty states
-- [ ] Settings sidebar nav group is collapsible
-- [ ] ESLint clean
+- [x] Permissions matrix page renders correct ✓/— for all 9 roles × 8 permissions
+- [x] Role legend cards render below the matrix
+- [x] Audit log table renders with paginated data from DB
+- [x] Audit log filters (action, actor, date range) work
+- [x] Row expand shows meta JSON
+- [x] Organisation settings form saves name, logo, hierarchy order
+- [x] Drag-to-reorder hierarchy works and persists
+- [x] Profile settings form saves jobTitle, department, avatar
+- [x] Password change works (verify old → hash new → save)
+- [x] Toast system works for success/error/info/warning
+- [x] All list pages have proper empty states
+- [x] Settings sidebar nav group is collapsible
+- [x] ESLint clean

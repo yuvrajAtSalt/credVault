@@ -1,83 +1,171 @@
-# VaultStack — Build Prompts Index
+# Cred Vault (VaultStack)
 
-A Jira-style, white-and-blue themed **Project Credentials Manager** built with Next.js (frontend + API routes) and MongoDB/Mongoose. Designed to sit alongside an existing **brand-store** project, inheriting all its coding conventions, ESLint rules, Tailwind config, and component patterns.
-
----
-
-## How to use these prompts
-
-Feed each phase file to **Google Antigravity** (or any AI coding agent) in order. Do not skip phases — each phase depends on the previous one being complete and passing its deliverable checklist.
-
-Before starting, give the agent access to your **brand-store** repository. Every phase prompt begins with an instruction to read brand-store's conventions before writing code.
+A secure, RBAC-driven credential management platform for engineering teams. Store, share, and audit API keys, tokens, database passwords, and secrets — all encrypted at rest with AES-256-GCM.
 
 ---
 
-## Phase overview
+## Tech Stack
 
-| Phase | File | Scope | Est. complexity |
-|---|---|---|---|
-| 00 | `phase-00-bootstrap.md` | Scaffold, standards, folder structure, constants | Low |
-| 01 | `phase-01-models-auth.md` | Mongoose models, JWT auth, login UI | Medium |
-| 02 | `phase-02-layout-projects.md` | App shell, sidebar, project CRUD | High |
-| 03 | `phase-03-credentials-vault.md` | Credential system, RBAC visibility, masking | High |
-| 04 | `phase-04-team-directory.md` | Team management, employee directory, org chart | High |
-| 05 | `phase-05-permissions-audit-settings.md` | Permissions matrix, audit log, settings pages | Medium |
-| 06 | `phase-06-security-polish.md` | Encryption, rate limiting, tests, polish | Medium |
-
----
-
-## Key product decisions captured in these prompts
-
-### Role system (9 roles)
-
-All roles — including executives (CEO, COO, CFO, CMO) — can create projects, add credentials, and be assigned to projects. The distinction is visibility scope:
-
-- **Executives (CEO, COO, CFO):** See all projects and all credentials org-wide by default. Can create projects and add credentials. Cannot manage team or grant visibility to others.
-- **CMO:** Same as executives but scoped to assigned projects only (not org-wide).
-- **Manager:** Manages assigned projects, invites members, controls per-member visibility grants.
-- **DevOps / Developer / QA:** Add credentials to assigned projects. See only their own credentials unless a manager grants them visibility.
-- **System Admin:** God mode. Sees and manages everything. The only role that can change other users' roles.
-
-### Credential visibility model
-
-1. Creator always sees their own credential.
-2. Executives (CEO, COO, CFO) see all credentials on all projects.
-3. Sysadmin sees everything.
-4. All others see only their own, unless a manager or sysadmin grants `scope: 'all'` visibility on a per-project, per-user basis.
-5. Hidden credentials are acknowledged with a count ("X credentials are hidden") so the user knows to request access.
-
-### Design system
-
-- Jira-like: white content areas, `#172B4D` dark navy sidebar, `#0052CC` primary blue
-- Font: Inter (or brand-store's font)
-- All Tailwind tokens scoped under `vault.*` namespace to avoid collisions with brand-store
+| Layer       | Technology                              |
+|-------------|------------------------------------------|
+| Frontend    | Next.js 16 (App Router), TypeScript, Vanilla CSS |
+| Backend     | Node.js, Express, TypeScript             |
+| Database    | MongoDB (Mongoose ODM)                   |
+| Auth        | JWT (access + refresh tokens), bcrypt    |
+| Encryption  | AES-256-GCM (Node.js built-in `crypto`)  |
+| Monorepo    | Turborepo + pnpm workspaces              |
 
 ---
 
-## Recommended agent instructions (prepend to each phase prompt)
+## Local Setup
 
-```
-You will have to follow the same monorepo structure and repository patterns , coding standards , ESLint and Prettier configuration exactly , TypeScript path aliases , Mongoose model structure and pre-save hook patterns , API route error handling conventions , Form component and input field patterns as brand-store.
-- here is the path to the brand-store project : C:\Users\user-09-12-2025\Yuvraj\BrandStore
-Before writing any code for VaultStack, read the brand-store source code and mirror its:
-- folder structure and barrel export patterns
-- ESLint and Prettier configuration exactly
-- Tailwind config (extend it, don't replace it)
-- TypeScript path aliases
-- Mongoose model structure and pre-save hook patterns
-- API route error handling conventions
-- Form component and input field patterns
+### Prerequisites
 
-Only then proceed with the phase instructions below.
-Do not use any library that brand-store does not already use unless the phase prompt explicitly introduces a new one.
+- Node.js ≥ 18
+- pnpm ≥ 8 (`npm i -g pnpm`)
+- A MongoDB connection string (Atlas free tier works)
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/your-org/credvault.git
+cd credvault
+pnpm install
 ```
 
+### 2. Configure Environment
+
+**API** — copy and fill in `apps/api/.env`:
+
+```env
+PORT=5050
+MONGO_URI=mongodb://localhost:27017/credvault
+VAULT_JWT_SECRET=<min 32 chars random string>
+VAULT_JWT_REFRESH_SECRET=<different min 32 chars random string>
+ACCESS_TOKEN_EXPIRATION=30m
+REFRESH_TOKEN_EXPIRATION=7d
+NODE_ENV=development
+CLIENT_URL=http://localhost:3050
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+ENCRYPTION_KEY=<64 char hex string>
+```
+
+**Web** — copy and fill in `apps/web/.env`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5050
+```
+
+### 3. Generate an Encryption Key
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Paste the output into `ENCRYPTION_KEY` in `apps/api/.env`.
+
+> ⚠️ Keep this key safe. Losing it means all credentials in the database become unrecoverable.
+
+### 4. Run Dev Server
+
+```bash
+pnpm run dev
+```
+
+- Frontend: http://localhost:3050
+- API:      http://localhost:5050
+
 ---
 
-## Local Setup Steps
+## First-Run Setup
 
-1. Copy `.env.local.example` to `.env.local` in the root folder, and `.env.example` in `apps/api` and `apps/web` to `.env`.
-2. Update the environment variables in `.env` and `.env.local` files to match your local setup components.
-3. Install dependencies from the root folder: `pnpm install`
-4. Start the development server from the root folder: `pnpm dev`
-5. The API server will be running on `http://localhost:5050` and the Next.js web application on `http://localhost:3050`.
+1. Open `http://localhost:3050` — you'll be redirected to `/login`.
+2. Call the registration endpoint once to create your organisation and first SYSADMIN:
+
+```bash
+curl -X POST http://localhost:5050/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"orgName":"Acme Corp","name":"Admin User","email":"admin@acme.com","password":"SuperSecret123!"}'
+```
+
+3. Log in at `http://localhost:3050/login` with those credentials.
+4. Invite team members from **Settings → Invite Member** or the **Team** page.
+
+---
+
+## Encrypting Existing Credentials (Migration)
+
+If you have credentials stored as plain text (before encryption was added), run:
+
+```bash
+cd apps/api
+npx ts-node scripts/migrate-encrypt-credentials.ts
+```
+
+Safe to run multiple times — already-encrypted values are automatically skipped.
+
+---
+
+## Folder Structure
+
+```
+credvault/
+├── apps/
+│   ├── api/                  Express API
+│   │   ├── src/
+│   │   │   ├── auth/         Auth routes + service
+│   │   │   ├── credential/   Credential CRUD + encryption
+│   │   │   ├── audit/        Audit log
+│   │   │   ├── project/      Project management
+│   │   │   ├── user/         User + member management
+│   │   │   ├── organisation/ Org settings
+│   │   │   └── utils/        Crypto, rate limiter, validators
+│   │   └── scripts/          One-time migration scripts
+│   └── web/                  Next.js frontend
+│       └── src/
+│           ├── app/          App Router pages
+│           ├── components/   Shared UI components
+│           ├── hooks/        Auth + permission hooks
+│           └── lib/          Constants, API helpers
+├── implementation phases/    Phase planning documents
+└── turbo.json                Turborepo config
+```
+
+---
+
+## Permissions Matrix
+
+| Role       | All Projects | Create Project | Add Cred | Manage Team | Grant Vis. | Manage Roles | All Creds | God Mode |
+|------------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| SYSADMIN   | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CEO        | ✓ | ✓ | ✓ | — | — | — | ✓ | — |
+| COO        | ✓ | ✓ | ✓ | — | — | — | ✓ | — |
+| CFO        | ✓ | ✓ | ✓ | — | — | — | ✓ | — |
+| CMO        | — | ✓ | ✓ | — | — | — | — | — |
+| MANAGER    | — | ✓ | ✓ | ✓ | ✓ | — | — | — |
+| DEVOPS     | — | — | ✓ | — | — | — | — | — |
+| DEVELOPER  | — | — | ✓ | — | — | — | — | — |
+| QA         | — | — | ✓ | — | — | — | — | — |
+
+For the full interactive permissions page, log in and navigate to **Settings → Permissions**.
+
+---
+
+## Production Build
+
+```bash
+pnpm run build
+```
+
+Both apps must pass TypeScript type-checking with zero errors before the build completes.
+
+---
+
+## Security Notes
+
+- All credential `value` fields are AES-256-GCM encrypted before writing to MongoDB.
+- JWT access tokens expire in 30 minutes; refresh tokens expire in 7 days.
+- Login is rate-limited to 5 attempts per 15 minutes per IP.
+- Credential reveal is rate-limited to 60 per hour per user.
+- All actions are recorded to an immutable audit log.
+- HTTP security headers (CSP, X-Frame-Options, HSTS, etc.) are applied to all responses.

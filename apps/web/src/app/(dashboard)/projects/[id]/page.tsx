@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Input } from '@/components/ui/Input';
 import { CredentialPanel } from '@/components/credentials';
+import { EnvManagerPanel } from '@/components/envs/EnvManagerPanel';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/components/auth/auth-provider';
 import { api } from '@/lib/api';
@@ -38,6 +39,8 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'neutral'> = {
     active: 'success', planning: 'warning', archived: 'neutral',
 };
 
+type Tab = 'credentials' | 'environments' | 'members';
+
 export default function ProjectDetailPage() {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
@@ -47,6 +50,7 @@ export default function ProjectDetailPage() {
     const [project, setProject]         = useState<PopulatedProject | null>(null);
     const [loading, setLoading]         = useState(true);
     const [error, setError]             = useState('');
+    const [activeTab, setActiveTab]     = useState<Tab>('credentials');
     const [showAddMember, setShowAdd]   = useState(false);
     const [memberSearch, setMemberSearch] = useState('');
     const [memberResults, setMemberResults] = useState<UserResult[]>([]);
@@ -65,7 +69,6 @@ export default function ProjectDetailPage() {
 
     useEffect(() => { fetchProject(); }, [fetchProject]);
 
-    // Search org users for add-member modal
     useEffect(() => {
         if (!memberSearch.trim()) { setMemberResults([]); return; }
         const timer = setTimeout(async () => {
@@ -103,6 +106,12 @@ export default function ProjectDetailPage() {
 
     const canManage = perms.canManageTeam() || String(project.createdBy?._id) === String(user?._id);
 
+    const TABS: { key: Tab; label: string }[] = [
+        { key: 'credentials', label: 'Credentials' },
+        { key: 'environments', label: 'Environments' },
+        { key: 'members',     label: `Members (${project.members.length})` },
+    ];
+
     return (
         <main className="vault-page">
             {/* Back */}
@@ -131,47 +140,71 @@ export default function ProjectDetailPage() {
                 </div>
             </div>
 
-            {/* Members */}
-            <div className="vault-card" style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--vault-ink)', margin: 0 }}>
-                        Members ({project.members.length})
-                    </h2>
-                    {canManage && (
-                        <Button variant="secondary" size="sm" onClick={() => setShowAdd(true)}>+ Add member</Button>
-                    )}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
-                    {project.members.map((m) => (
-                        <div key={m.userId._id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--vault-surface)', borderRadius: 6 }}>
-                            <Avatar name={m.userId.name} src={m.userId.avatarUrl} size="md" />
-                            <div style={{ flex: 1, overflow: 'hidden' }}>
-                                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--vault-ink)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.userId.name}</p>
-                                <p style={{ fontSize: 11, color: 'var(--vault-ink-muted)', margin: 0 }}>{ROLE_LABELS[m.userId.role] ?? m.userId.role}</p>
-                            </div>
-                            {canManage && m.userId._id !== user?._id && (
-                                <button
-                                    onClick={() => setConfirmRemove(m.userId as any)}
-                                    disabled={removingId === m.userId._id}
-                                    style={{ background: 'none', border: 'none', color: 'var(--vault-danger)', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}
-                                >
-                                    Remove
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
+            {/* Tab bar */}
+            <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid var(--vault-border)', marginBottom: 20 }}>
+                {TABS.map(tab => (
+                    <button
+                        key={tab.key}
+                        id={`tab-${tab.key}`}
+                        onClick={() => setActiveTab(tab.key)}
+                        style={{
+                            padding: '8px 20px', fontSize: 13, fontWeight: 600,
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: activeTab === tab.key ? 'var(--vault-primary)' : 'var(--vault-ink-muted)',
+                            borderBottom: activeTab === tab.key ? '2px solid var(--vault-primary)' : '2px solid transparent',
+                            marginBottom: -2, transition: 'color 120ms',
+                        }}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            {/* Credentials */}
-            <div style={{ marginBottom: 20 }}>
-                <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--vault-ink)', margin: '0 0 12px' }}>Credentials</h2>
+            {/* Tab content */}
+            {activeTab === 'credentials' && (
                 <CredentialPanel
                     projectId={id}
                     members={project.members as any}
                     isCreator={String(project.createdBy?._id) === String(user?._id)}
                 />
-            </div>
+            )}
+
+            {activeTab === 'environments' && (
+                <EnvManagerPanel projectId={id} />
+            )}
+
+            {activeTab === 'members' && (
+                <div className="vault-card">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--vault-ink)', margin: 0 }}>
+                            Members ({project.members.length})
+                        </h2>
+                        {canManage && (
+                            <Button variant="secondary" size="sm" onClick={() => setShowAdd(true)}>+ Add member</Button>
+                        )}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+                        {project.members.map((m) => (
+                            <div key={m.userId._id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--vault-surface)', borderRadius: 6 }}>
+                                <Avatar name={m.userId.name} src={m.userId.avatarUrl} size="md" />
+                                <div style={{ flex: 1, overflow: 'hidden' }}>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--vault-ink)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.userId.name}</p>
+                                    <p style={{ fontSize: 11, color: 'var(--vault-ink-muted)', margin: 0 }}>{ROLE_LABELS[m.userId.role] ?? m.userId.role}</p>
+                                </div>
+                                {canManage && m.userId._id !== user?._id && (
+                                    <button
+                                        onClick={() => setConfirmRemove(m.userId as any)}
+                                        disabled={removingId === m.userId._id}
+                                        style={{ background: 'none', border: 'none', color: 'var(--vault-danger)', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Add member modal */}
             <Modal isOpen={showAddMember} onClose={() => { setShowAdd(false); setMemberSearch(''); setMemberResults([]); }} title="Add member" width="sm">
@@ -198,7 +231,6 @@ export default function ProjectDetailPage() {
                 </div>
             </Modal>
 
-            {/* Remove confirm */}
             <ConfirmDialog
                 isOpen={!!confirmRemove}
                 onClose={() => setConfirmRemove(null)}

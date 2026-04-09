@@ -5,6 +5,7 @@ import { body } from '../utils/validator';
 import { z } from 'zod';
 import credentialService from './credential.service';
 import { CREDENTIAL_CATEGORIES, CREDENTIAL_ENVIRONMENTS } from './credential.types';
+import { revealRateLimiter } from '../utils/rateLimit';
 
 const credentialRouter = Router({ mergeParams: true });
 
@@ -58,7 +59,7 @@ credentialRouter.post('/visibility', body(grantSchema), async (req: any, res, ne
 // ─── DYNAMIC /:credId routes ──────────────────────────────────────────────────
 
 // GET /api/v1/projects/:id/credentials/:credId/reveal ───────────────────────
-credentialRouter.get('/:credId/reveal', async (req: any, res, next) => {
+credentialRouter.get('/:credId/reveal', revealRateLimiter, async (req: any, res, next) => {
     try {
         const result = await credentialService.reveal(req.params.id, req.params.credId, req.currentUser);
         res.status(result.statusCode).send(new ResponseHandler(result));

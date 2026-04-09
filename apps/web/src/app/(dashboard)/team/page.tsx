@@ -44,7 +44,9 @@ export default function TeamPage() {
     const [showInvite, setShowInvite]   = useState(false);
     const [editTarget, setEditTarget]   = useState<Member | null>(null);
     const [projects, setProjects]       = useState<any[]>([]);
+    const [teams, setTeams]             = useState<any[]>([]);
     const [expanded, setExpanded]       = useState<string | null>(null);
+    const [teamFilter, setTeamFilter]   = useState('');
 
     const canInvite = perms.canManageTeam() || perms.isGod();
     const canEdit   = perms.isGod() || perms.canManageRoles();
@@ -64,16 +66,24 @@ export default function TeamPage() {
         setProjects((data as any)?.data ?? []);
     }, []);
 
-    useEffect(() => { fetchMembers(); }, [fetchMembers]);
+    const fetchTeams = useCallback(async () => {
+        const { data } = await api.get<any>('/api/v1/org/teams');
+        setTeams(data?.data?.data ?? []);
+    }, []);
+
+    useEffect(() => { fetchMembers(); fetchTeams(); }, [fetchMembers, fetchTeams]);
     useEffect(() => { if (tab === 'projects') fetchProjects(); }, [tab, fetchProjects]);
 
     const filteredMembers = members.filter((m) => {
         const q = search.toLowerCase();
-        return (
+        const matchSearch = (
             m.name.toLowerCase().includes(q) ||
             m.email.toLowerCase().includes(q) ||
             (m.department ?? '').toLowerCase().includes(q)
         );
+        const matchRole = !roleFilter || m.role === roleFilter;
+        const matchTeam = !teamFilter || (m as any).team?.name === teamFilter || (m as any).teamId?.name === teamFilter;
+        return matchSearch && matchRole && matchTeam;
     });
 
     const tabStyle = (active: boolean) => ({
@@ -122,6 +132,16 @@ export default function TeamPage() {
                                 value={roleFilter}
                                 onChange={(e) => setRoleFilter(e.target.value)}
                                 options={ROLE_FILTER_OPTIONS}
+                            />
+                        </div>
+                        <div style={{ minWidth: 160 }}>
+                            <Select
+                                value={teamFilter}
+                                onChange={(e) => setTeamFilter(e.target.value)}
+                                options={[
+                                    { value: '', label: 'All teams' },
+                                    ...teams.map(t => ({ value: t.name, label: t.name })),
+                                ]}
                             />
                         </div>
                     </div>

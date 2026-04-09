@@ -401,25 +401,25 @@ Add to `AuditLog` action enum:
 
 ## Deliverable checklist
 
-- [ ] `Team` model created with compound unique index on `[organisationId, slug]`
-- [ ] `OrgSnapshot` model created
-- [ ] `User` model updated with `teamId` and `isOrgRoot` fields
-- [ ] `GET /api/org/chart` returns correct nested tree with `unassigned` array
-- [ ] Circular chain detection works (API returns 409 on attempt)
-- [ ] Single root enforcement works
-- [ ] `GET /api/org/members/:id/chain` returns correct ancestor chain
-- [ ] `POST /api/org/members/bulk-assign` processes all assignments, returns counts
-- [ ] Snapshot save and list endpoints work
-- [ ] Org structure builder page renders (sysadmin only)
-- [ ] Teams panel renders nested teams, create/edit/delete work
-- [ ] Org chart renders SVG bezier connectors correctly
-- [ ] Drag-and-drop works: drag node → drop on target → confirmation → API call
-- [ ] Unassigned strip renders, dragging from it onto tree assigns reporting
-- [ ] Zoom in/out/reset works on org chart
-- [ ] Member editor slide-over opens, saves reporting + team + fields
-- [ ] "Set as org root" toggle works with warning
-- [ ] Employee directory org chart replaced with new renderer
-- [ ] Directory org chart has zoom + team filter
-- [ ] Team page has team filter sidebar
-- [ ] AuditLog entries written for all org structure actions
-- [ ] ESLint clean, `npm run build` passes with zero TypeScript errors
+- [x] `Team` model created with compound unique index on `[organisationId, slug]`
+- [x] `OrgSnapshot` model created
+- [x] `User` model updated with `teamId` and `isOrgRoot` fields
+- [x] `GET /api/org/chart` returns correct nested tree with `unassigned` array
+- [x] Circular chain detection works (API returns 409 on attempt)
+- [x] Single root enforcement works
+- [x] `GET /api/org/members/:id/chain` returns correct ancestor chain
+- [x] `POST /api/org/members/bulk-assign` processes all assignments, returns counts
+- [x] Snapshot save and list endpoints work
+- [x] Org structure builder page renders (sysadmin only)
+- [x] Teams panel renders nested teams, create/edit/delete work
+- [x] Org chart renders SVG bezier connectors correctly
+- [x] Drag-and-drop works: drag node → drop on target → confirmation → API call
+- [x] Unassigned strip renders, dragging from it onto tree assigns reporting
+- [x] Zoom in/out/reset works on org chart
+- [x] Member editor slide-over opens, saves reporting + team + fields
+- [x] "Set as org root" toggle works with warning
+- [x] Employee directory org chart replaced with new renderer
+- [x] Directory org chart has zoom + team filter
+- [x] Team page has team filter sidebar
+- [x] AuditLog entries written for all org structure actions
+- [x] ESLint clean, `npm run build` passes with zero TypeScript errors
