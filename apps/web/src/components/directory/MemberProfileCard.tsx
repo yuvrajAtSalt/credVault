@@ -20,13 +20,15 @@ interface Member {
 interface Props {
     member: Member;
     onClick?: (member: Member) => void;
+    selectable?: boolean;
+    selected?: boolean;
+    onToggleSelect?: (id: string) => void;
 }
 
-export function MemberProfileCard({ member, onClick }: Props) {
+export function MemberProfileCard({ member, onClick, selectable, selected, onToggleSelect }: Props) {
     return (
         <div
             className="vault-card"
-            onClick={() => onClick?.(member)}
             style={{
                 cursor: onClick ? 'pointer' : 'default',
                 display: 'flex',
@@ -37,11 +39,27 @@ export function MemberProfileCard({ member, onClick }: Props) {
                 padding: '24px 16px',
                 transition: 'box-shadow var(--vault-transition-fast)',
                 opacity: member.isActive ? 1 : 0.5,
+                position: 'relative',
             }}
             onMouseEnter={(e) => onClick && (e.currentTarget.style.boxShadow = 'var(--vault-shadow-raised)')}
             onMouseLeave={(e) => onClick && (e.currentTarget.style.boxShadow = 'var(--vault-shadow-card)')}
         >
-            <Avatar name={member.name} src={member.avatarUrl} size="xl" />
+            {selectable && (
+                <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
+                    <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => onToggleSelect?.(member._id)}
+                        style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
+                    />
+                </div>
+            )}
+            
+            <div 
+                style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }} 
+                onClick={() => onClick?.(member)}
+            >
+                <Avatar name={member.name} src={member.avatarUrl} size="xl" />
 
             <div>
                 <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>
@@ -82,6 +100,7 @@ export function MemberProfileCard({ member, onClick }: Props) {
             >
                 {member.email}
             </a>
+            </div>
         </div>
     );
 }

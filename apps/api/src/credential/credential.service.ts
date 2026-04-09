@@ -5,6 +5,14 @@ import { writeAuditLog } from '../audit/audit.repo';
 import { BASE_PERMISSIONS } from '../utils/constants';
 import { encrypt, decrypt } from '../utils/crypto';
 import type { VaultRole } from '../utils/constants';
+import { CredentialModel } from './credential.schema';
+
+// Helper to check archived
+function assertNotArchived(project: any) {
+    if (project.status === 'archived') {
+        throw { statusCode: 403, message: 'This project is archived. No changes are permitted.', code: 'PROJECT_ARCHIVED' };
+    }
+}
 
 // ─── Visibility helper ────────────────────────────────────────────────────────
 
@@ -74,7 +82,7 @@ export const list = async (projectId: string, currentUser: any) => {
 };
 
 // ─── reveal ───────────────────────────────────────────────────────────────────
-export const reveal = async (projectId: string, credId: string, currentUser: any) => {
+export const reveal = async (projectId: string, credId: string, currentUser: any, reason?: string) => {
     const cred = await credentialRepo.findById(credId);
     if (!cred || cred.projectId.toString() !== projectId) throw { statusCode: 404, message: 'CREDENTIAL NOT FOUND' };
 
@@ -86,12 +94,22 @@ export const reveal = async (projectId: string, credId: string, currentUser: any
 
     await writeAuditLog({
         actorId: String(currentUser._id),
-        action: 'credential.view',
+        action: cred.sensitivityLevel === 'critical' ? 'credential.reveal_critical' : 'credential.view',
         targetType: 'Credential',
         targetId: credId,
         organisationId: String(currentUser.organisationId),
         meta: { label: (cred as any).label },
     });
+
+    // Phase 10: Log reason for critical
+    if (cred.sensitivityLevel === 'critical') {
+        if (!reason && !isOwner) throw { statusCode: 400, message: 'Reason required to reveal critical credentials' };
+        if (reason) {
+            await CredentialModel.updateOne({ _id: credId }, {
+                $push: { revealReasons: { userId: currentUser._id, reason, at: new Date() } }
+            });
+        }
+    }
 
     // Decrypt the value before returning
     let plainValue: string;
@@ -108,11 +126,21 @@ export const reveal = async (projectId: string, credId: string, currentUser: any
 // ─── create ───────────────────────────────────────────────────────────────────
 export const create = async (
     projectId: string,
-    body: { category: string; label: string; value: string; isSecret?: boolean; environment?: string },
+    body: { category: string; label: string; value: string; isSecret?: boolean; environment?: string; expiresAt?: string; rotationReminderDays?: number; sensitivityLevel?: string },
     currentUser: any,
 ) => {
     const project = await projectRepo.findById(projectId);
     if (!project) throw { statusCode: 404, message: 'PROJECT NOT FOUND' };
+
+    assertNotArchived(project);
+
+    // Phase 10: only Managers, DevOps, Sysadmin can add 'critical' credentials
+    if (body.sensitivityLevel === 'critical') {
+        const role = currentUser.role as VaultRole;
+        if (!['MANAGER', 'DEVOPS', 'SYSADMIN'].includes(role)) {
+            throw { statusCode: 403, message: 'Only Managers, DevOps, or Sysadmins can add critical credentials' };
+        }
+    }
 
     const perms = BASE_PERMISSIONS[currentUser.role as VaultRole];
     if (!perms.isGod && !perms.canSeeAllCredentials) {
@@ -128,6 +156,9 @@ export const create = async (
         value: encrypt(body.value),  // AES-256-GCM encrypted at rest
         isSecret: body.isSecret ?? true,
         environment: body.environment ?? 'all',
+        expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
+        rotationReminderDays: body.rotationReminderDays,
+        sensitivityLevel: body.sensitivityLevel,
         addedBy: String(currentUser._id),
         addedByRole: currentUser.role,
     });
@@ -154,9 +185,14 @@ export const update = async (
     const cred = await credentialRepo.findById(credId);
     if (!cred || cred.projectId.toString() !== projectId) throw { statusCode: 404, message: 'CREDENTIAL NOT FOUND' };
 
+    const project = await projectRepo.findById(projectId);
+    assertNotArchived(project);
+
     const isOwner = String((cred.addedBy as any)?._id ?? cred.addedBy) === String(currentUser._id);
-    const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
-    if (!isOwner && !isPrivileged) throw { statusCode: 403, message: 'FORBIDDEN' };
+    const isProjectManager = currentUser.role === 'MANAGER' && (project as any).members.some((m: any) => String(m.userId) === String(currentUser._id));
+    const isSysadmin = currentUser.role === 'SYSADMIN';
+
+    if (!isOwner && !isProjectManager && !isSysadmin) throw { statusCode: 403, message: 'You can only edit credentials you added yourself.', code: 'CREDENTIAL_EDIT_NOT_OWNER' };
 
     const patch: Record<string, any> = {
         ...body,
@@ -175,9 +211,14 @@ export const softDelete = async (projectId: string, credId: string, currentUser:
     const cred = await credentialRepo.findById(credId);
     if (!cred || cred.projectId.toString() !== projectId) throw { statusCode: 404, message: 'CREDENTIAL NOT FOUND' };
 
+    const project = await projectRepo.findById(projectId);
+    assertNotArchived(project);
+
     const isOwner = String((cred.addedBy as any)?._id ?? cred.addedBy) === String(currentUser._id);
-    const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
-    if (!isOwner && !isPrivileged) throw { statusCode: 403, message: 'FORBIDDEN' };
+    const isProjectManager = currentUser.role === 'MANAGER' && (project as any).members.some((m: any) => String(m.userId) === String(currentUser._id));
+    const isSysadmin = currentUser.role === 'SYSADMIN';
+
+    if (!isOwner && !isProjectManager && !isSysadmin) throw { statusCode: 403, message: 'You can only edit credentials you added yourself.', code: 'CREDENTIAL_EDIT_NOT_OWNER' };
 
     await credentialRepo.softDelete(credId);
 

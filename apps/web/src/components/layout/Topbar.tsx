@@ -35,6 +35,7 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
             {/* Right side actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <button
+                    suppressHydrationWarning
                     style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--vault-ink-muted)' }}
                     aria-label="Notifications"
                 >
@@ -43,6 +44,7 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
 
                 <div style={{ position: 'relative' }}>
                     <button
+                        suppressHydrationWarning
                         onClick={() => setMenuOpen(!menuOpen)}
                         style={{
                             background: 'none', border: 'none', cursor: 'pointer',

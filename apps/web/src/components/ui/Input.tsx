@@ -19,6 +19,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     </label>
                 )}
                 <input
+                    suppressHydrationWarning
                     id={inputId}
                     ref={ref}
                     className="vault-input"
@@ -52,6 +53,7 @@ export function Select({ label, error, options, id, ...rest }: SelectProps) {
                 </label>
             )}
             <select
+                suppressHydrationWarning
                 id={selectId}
                 className="vault-input"
                 style={{ borderColor: error ? 'var(--vault-danger)' : undefined, cursor: 'pointer' }}
@@ -81,6 +83,7 @@ export function Textarea({ label, error, id, ...rest }: TextareaProps) {
                 </label>
             )}
             <textarea
+                suppressHydrationWarning
                 id={taId}
                 className="vault-input"
                 rows={3}

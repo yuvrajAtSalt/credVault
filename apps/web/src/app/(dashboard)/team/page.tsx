@@ -111,8 +111,8 @@ export default function TeamPage() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--vault-border)', marginBottom: 20 }}>
-                <button style={tabStyle(tab === 'all')} onClick={() => setTab('all')}>All members</button>
-                <button style={tabStyle(tab === 'projects')} onClick={() => setTab('projects')}>By project</button>
+                <button suppressHydrationWarning style={tabStyle(tab === 'all')} onClick={() => setTab('all')}>All members</button>
+                <button suppressHydrationWarning style={tabStyle(tab === 'projects')} onClick={() => setTab('projects')}>By project</button>
             </div>
 
             {/* ── ALL MEMBERS TAB ────────────────────────────────────────────── */}

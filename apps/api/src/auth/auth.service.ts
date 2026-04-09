@@ -208,4 +208,18 @@ export const changePassword = async (userId: string, body: { currentPassword: st
     return { statusCode: 200, message: 'PASSWORD CHANGED SUCCESSFULLY', data: null };
 };
 
-export default { register, login, me, logout, refreshToken, invite, changePassword };
+// ─── mePermissions ────────────────────────────────────────────────────────────
+export const mePermissions = async (currentUser: any) => {
+    const { UserModel } = await import('../user/user.schema');
+    const user = await UserModel.findById(currentUser._id)
+        .populate('customRoleId', 'name slug color badgeLabel permissions')
+        .lean();
+    if (!user) throw authResponses.USER_NOT_FOUND;
+
+    const { resolvePermissionsSync } = await import('../utils/permissions');
+    const effective = resolvePermissionsSync(user);
+
+    return { statusCode: 200, message: 'PERMISSIONS FETCHED', data: { effectivePermissions: effective, forcePasswordChange: (user as any).forcePasswordChange } };
+};
+
+export default { register, login, me, mePermissions, logout, refreshToken, invite, changePassword };

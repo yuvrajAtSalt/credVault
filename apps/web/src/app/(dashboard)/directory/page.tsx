@@ -46,6 +46,10 @@ export default function DirectoryPage() {
     const [selected, setSelected]     = useState<Member | null>(null);
     const [editTarget, setEditTarget] = useState<Member | null>(null);
 
+    // Bulk actions Phase 10
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [bulkSaving, setBulkSaving] = useState(false);
+
     const canEdit = perms.isGod() || perms.canManageRoles();
 
     const fetchMembers = useCallback(async () => {
@@ -86,6 +90,20 @@ export default function DirectoryPage() {
         const matchTeam = !teamFilter || (m as any).team?.name === teamFilter || (m as any).teamId?.name === teamFilter;
         return matchSearch && matchRole && matchTeam;
     });
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const handleBulkDeactivate = async () => {
+        if (!confirm(`Deactivate ${selectedIds.length} users?`)) return;
+        setBulkSaving(true);
+        // We assume /api/v1/admin/users/bulk as we don't have the exact API yet
+        await Promise.all(selectedIds.map(id => api.patch(`/api/v1/admin/users/${id}`, { isActive: false })));
+        setBulkSaving(false);
+        setSelectedIds([]);
+        fetchMembers();
+    };
 
     return (
         <main className="vault-page">
@@ -178,6 +196,9 @@ export default function DirectoryPage() {
                                     key={m._id}
                                     member={m}
                                     onClick={handleSelectMember}
+                                    selectable={canEdit}
+                                    selected={selectedIds.includes(m._id)}
+                                    onToggleSelect={toggleSelect}
                                 />
                             ))}
                         </div>
@@ -212,6 +233,23 @@ export default function DirectoryPage() {
                 member={editTarget}
                 orgMembers={members}
             />
+
+            {/* Bulk action floating bar */}
+            {selectedIds.length > 0 && (
+                <div style={{
+                    position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+                    background: 'var(--vault-surface)', border: '1px solid var(--vault-border)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.12)', borderRadius: 8, padding: '12px 20px',
+                    display: 'flex', alignItems: 'center', gap: 16, zIndex: 100,
+                }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedIds.length} selected</span>
+                    <div style={{ width: 1, height: 24, background: 'var(--vault-border)' }} />
+                    <Button variant="secondary" size="sm" onClick={() => setSelectedIds([])}>Clear</Button>
+                    <Button variant="primary" size="sm" loading={bulkSaving} style={{ background: 'var(--vault-danger)', borderColor: 'var(--vault-danger)', color: '#fff' }} onClick={handleBulkDeactivate}>
+                        Deactivate
+                    </Button>
+                </div>
+            )}
         </main>
     );
 }

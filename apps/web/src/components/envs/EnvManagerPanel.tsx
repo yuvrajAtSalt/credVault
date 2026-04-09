@@ -15,7 +15,8 @@ interface EnvVariable {
     isSecret: boolean;
     group: string;
     isOverridden: boolean;
-    addedBy: { name: string; role: string } | null;
+    sensitivityLevel?: 'normal' | 'sensitive' | 'critical';
+    addedBy: { _id: string; name: string; role: string } | null;
 }
 
 interface EnvGroup {
@@ -417,20 +418,41 @@ function VariableRow({ v, projectId, envId, onDelete, onEdit, baseKeys }: {
     const [editValue, setEditValue] = useState('');
     const [saving, setSaving] = useState(false);
     const [confirmDelete, setConfirm] = useState(false);
+    
+    // Phase 10: Critical credential prompt
+    const [promptingReason, setPromptingReason] = useState(false);
+    const [reason, setReason] = useState('');
 
-    const reveal = async () => {
+    const currentUserId = ''; // we can just pull it from useAuth if needed, but if omitted it will just prompt anyway.
+    // wait, we can pass `currentUserId` to VariableRow from EnvManagerPanel.
+    // Actually, addedBy._id is available. If we don't have currentUserId, we just prompt.
+
+    const reveal = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         if (revealed !== null) { setRevealed(null); return; }
+
+        if (v.sensitivityLevel === 'critical' && !reason /* && not owner could be checked but let it prompt and server decide or just prompt */) {
+            setPromptingReason(true);
+            return;
+        }
+
         setRevealing(true);
-        const { data, error } = await api.get<any>(`/api/v1/projects/${projectId}/envs/${envId}/variables/${v._id}/reveal`);
+        const { data, error } = await api.post<any>(`/api/v1/projects/${projectId}/envs/${envId}/variables/${v._id}/reveal`, { reason });
         setRevealing(false);
         if (error) { toast.error('Cannot reveal: ' + error.message); return; }
+        
         setRevealed(data?.data?.data?.value ?? '');
+        setPromptingReason(false);
+        setReason('');
     };
 
     const copy = async () => {
         let val = revealed;
         if (val === null) {
-            const { data, error } = await api.get<any>(`/api/v1/projects/${projectId}/envs/${envId}/variables/${v._id}/reveal`);
+            const reqReason = v.sensitivityLevel === 'critical' ? window.prompt('Reason for copying critical variable:') : '';
+            if (v.sensitivityLevel === 'critical' && !reqReason) return;
+
+            const { data, error } = await api.post<any>(`/api/v1/projects/${projectId}/envs/${envId}/variables/${v._id}/reveal`, { reason: reqReason });
             if (error) { toast.error('Cannot copy'); return; }
             val = data?.data?.data?.value ?? '';
             setRevealed(val);
@@ -486,9 +508,23 @@ function VariableRow({ v, projectId, envId, onDelete, onEdit, baseKeys }: {
                         <button className="vault-btn vault-btn--primary" style={{ fontSize: 11 }} onClick={saveEdit} disabled={saving}>{saving ? '…' : 'Save'}</button>
                         <button className="vault-btn" style={{ fontSize: 11 }} onClick={() => setEditMode(false)}>Cancel</button>
                     </div>
+                ) : promptingReason ? (
+                    <form onSubmit={reveal} style={{ flex: 1, display: 'flex', gap: 6 }}>
+                        <input
+                            autoFocus
+                            placeholder="Reason for revealing critical variable..."
+                            value={reason} onChange={e => setReason(e.target.value)}
+                            style={{ flex: 1, border: '1px solid var(--vault-border)', padding: '4px 8px', fontSize: 12, borderRadius: 3, letterSpacing: 'normal', outline: 'none' }}
+                        />
+                        <button type="submit" disabled={!reason.trim()} style={{ background: 'var(--vault-primary)', color: '#fff', border: 'none', borderRadius: 3, padding: '0 10px', fontSize: 12, fontWeight: 600, cursor: reason.trim() ? 'pointer' : 'not-allowed' }}>Confirm</button>
+                        <button type="button" onClick={() => setPromptingReason(false)} style={{ background: 'var(--vault-bg-hover)', color: 'var(--vault-ink)', border: 'none', borderRadius: 3, padding: '0 8px', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                    </form>
                 ) : (
-                    <span style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, color: revealed !== null ? 'var(--vault-ink)' : 'var(--vault-ink-muted)', letterSpacing: revealed !== null ? 'normal' : 3 }}>
+                    <span style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, color: revealed !== null ? 'var(--vault-ink)' : 'var(--vault-ink-muted)', letterSpacing: revealed !== null ? 'normal' : 3, display: 'flex', alignItems: 'center', gap: 6 }}>
                         {revealed !== null ? revealed : '••••••••'}
+                        {v.sensitivityLevel === 'critical' && (
+                            <span style={{ fontSize: 9, background: 'var(--vault-danger-light)', color: 'var(--vault-danger)', padding: '1px 4px', borderRadius: 2, fontWeight: 800, letterSpacing: 0.5 }}>CRITICAL</span>
+                        )}
                     </span>
                 )}
 

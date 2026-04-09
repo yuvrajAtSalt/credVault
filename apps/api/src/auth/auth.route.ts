@@ -58,6 +58,14 @@ authRouter.get('/me', async (req: any, res, next) => {
     } catch (e) { next(e); }
 });
 
+// ─── GET /api/v1/auth/me/permissions — resolved effective permissions ──────────
+authRouter.get('/me/permissions', async (req: any, res, next) => {
+    try {
+        const result = await authService.mePermissions(req.currentUser);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
 // ─── POST /api/v1/auth/logout ─────────────────────────────────────────────────
 authRouter.post('/logout', validateToken([]), async (req: any, res, next) => {
     try {

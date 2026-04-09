@@ -3,9 +3,11 @@ import { VAULT_ROLES } from '../utils/constants';
 
 // ─── Project sub-document types ───────────────────────────────────────────────
 const memberSchema = z.object({
-    userId: z.string(),
-    addedBy: z.string(),
-    addedAt: z.date().optional(),
+    userId:      z.string(),
+    addedBy:     z.string(),
+    addedAt:     z.date().optional(),
+    memberType:  z.enum(['contributor', 'observer']).default('contributor'),
+    projectRole: z.string().nullable().optional(),
 });
 
 const visibilityGrantSchema = z.object({
@@ -26,6 +28,9 @@ export const projectSchemaType = z.object({
     createdBy: z.string(),
     members: z.array(memberSchema).default([]),
     visibilityGrants: z.array(visibilityGrantSchema).default([]),
+    credentialCategories: z.array(z.object({
+        name: z.string(), icon: z.string().optional(), slug: z.string(),
+    })).default([]),
     isDeleted: z.boolean().optional(),
 });
 

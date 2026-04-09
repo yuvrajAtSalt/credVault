@@ -21,6 +21,7 @@ interface Credential {
     category: string;
     isSecret: boolean;
     environment: string;
+    sensitivityLevel?: 'normal' | 'sensitive' | 'critical';
     addedBy: { _id: string; name: string; role: VaultRole };
     addedByRole: VaultRole;
     createdAt: string;
@@ -42,16 +43,30 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
     const [confirmOpen, setConfirmOpen]   = useState(false);
     const [deleting, setDeleting]         = useState(false);
 
+    // Phase 10: Critical credential prompt
+    const [promptingReason, setPromptingReason] = useState(false);
+    const [reason, setReason]                   = useState('');
+
     const envStyle = ENV_COLORS[cred.environment] ?? ENV_COLORS.all;
 
-    const handleReveal = async () => {
+    const handleReveal = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         if (revealed) { setRevealed(false); setRevealedVal(''); return; }
+
+        if (cred.sensitivityLevel === 'critical' && !reason && currentUserId !== cred.addedBy._id) {
+            setPromptingReason(true);
+            return;
+        }
+
         setRevealing(true);
-        const { data, error } = await api.get<any>(`/api/v1/projects/${projectId}/credentials/${cred._id}/reveal`);
+        const { data, error } = await api.post<any>(`/api/v1/projects/${projectId}/credentials/${cred._id}/reveal`, { reason });
         setRevealing(false);
         if (error) { alert(error.message); return; }
+        
         setRevealedVal((data as any)?.data?.value ?? '');
         setRevealed(true);
+        setPromptingReason(false);
+        setReason('');
     };
 
     const handleCopy = async () => {
@@ -82,8 +97,13 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
             {/* Row 1 — label + env + meta + actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {/* Label */}
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--vault-ink)', flex: 1, minWidth: 120 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--vault-ink)', flex: 1, minWidth: 120, display: 'flex', alignItems: 'center', gap: 6 }}>
                     {cred.label}
+                    {cred.sensitivityLevel === 'critical' && (
+                        <span style={{ fontSize: 9, background: 'var(--vault-danger-light)', color: 'var(--vault-danger)', padding: '1px 4px', borderRadius: 2, fontWeight: 800, letterSpacing: 0.5 }}>
+                            CRITICAL
+                        </span>
+                    )}
                 </span>
 
                 {/* Environment pill */}
@@ -162,7 +182,24 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
                 letterSpacing: revealed ? 'normal' : '0.15em',
                 userSelect: revealed ? 'text' : 'none',
             }}>
-                {revealed ? revealedVal : '••••••••••••••••'}
+                {promptingReason ? (
+                    <form onSubmit={handleReveal} style={{ display: 'flex', gap: 8 }}>
+                        <input
+                            autoFocus
+                            placeholder="Reason for revealing critical credential..."
+                            value={reason} onChange={e => setReason(e.target.value)}
+                            style={{ flex: 1, border: '1px solid var(--vault-border)', padding: '4px 8px', fontSize: 12, borderRadius: 3, letterSpacing: 'normal', outline: 'none' }}
+                        />
+                        <button type="submit" disabled={!reason.trim()} style={{ background: 'var(--vault-primary)', color: '#fff', border: 'none', borderRadius: 3, padding: '0 10px', fontSize: 12, fontWeight: 600, cursor: reason.trim() ? 'pointer' : 'not-allowed' }}>
+                            Confirm
+                        </button>
+                        <button type="button" onClick={() => setPromptingReason(false)} style={{ background: 'var(--vault-bg-hover)', color: 'var(--vault-ink)', border: 'none', borderRadius: 3, padding: '0 8px', fontSize: 12, cursor: 'pointer' }}>
+                            Cancel
+                        </button>
+                    </form>
+                ) : (
+                    revealed ? revealedVal : '••••••••••••••••'
+                )}
             </div>
 
             <ConfirmDialog

@@ -10,6 +10,8 @@ export interface IEnvVariableSchema {
     value: string;             // AES-256-GCM encrypted
     isSecret: boolean;
     group: string;
+    expiresAt?: Date;
+    sensitivityLevel: string;
     inheritedFromEnvId?: any;
     isOverridden: boolean;
     addedBy: any;
@@ -30,6 +32,8 @@ const envVariableSchema = new Schema<IEnvVariableSchema>(
         value:              { type: String, required: true },
         isSecret:           { type: Boolean, default: true },
         group:              { type: String, default: 'General', trim: true },
+        expiresAt:          { type: Date },
+        sensitivityLevel:   { type: String, enum: ['normal', 'sensitive', 'critical'], default: 'normal' },
         inheritedFromEnvId: { type: Schema.Types.ObjectId as any, ref: 'Environment' },
         isOverridden:       { type: Boolean, default: false },
         addedBy:            { type: Schema.Types.ObjectId as any, ref: 'User', required: true },

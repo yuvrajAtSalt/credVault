@@ -58,7 +58,15 @@ credentialRouter.post('/visibility', body(grantSchema), async (req: any, res, ne
 
 // ─── DYNAMIC /:credId routes ──────────────────────────────────────────────────
 
-// GET /api/v1/projects/:id/credentials/:credId/reveal ───────────────────────
+// POST /api/v1/projects/:id/credentials/:credId/reveal ───────────────────────
+credentialRouter.post('/:credId/reveal', revealRateLimiter, async (req: any, res, next) => {
+    try {
+        const result = await credentialService.reveal(req.params.id, req.params.credId, req.currentUser, req.body?.reason);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
+// Also keep GET for backward compatibility for non-critical credentials
 credentialRouter.get('/:credId/reveal', revealRateLimiter, async (req: any, res, next) => {
     try {
         const result = await credentialService.reveal(req.params.id, req.params.credId, req.currentUser);

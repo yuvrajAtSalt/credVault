@@ -4,6 +4,9 @@ import userRepo from '../user/user.repo';
 import credentialRepo from '../credential/credential.repo';
 import { writeAuditLog } from '../audit/audit.repo';
 import { EXECUTIVE_ROLES, ADMIN_ROLES } from '../utils/constants';
+import { getRoleTier, isInManagersTeam, canManage } from '../utils/hierarchy';
+import { resolvePermissionsSync, EffectivePermissions } from '../utils/permissions';
+import { ProjectModel } from './project.schema';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -11,6 +14,13 @@ const GLOBAL_VIEWER_ROLES = [...EXECUTIVE_ROLES, ...ADMIN_ROLES];
 
 function canSeeAllProjects(role: string) {
     return GLOBAL_VIEWER_ROLES.includes(role as any);
+}
+
+// Helper to throw on archived
+function assertNotArchived(project: any) {
+    if (project.status === 'archived') {
+        throw { statusCode: 403, message: 'This project is archived. No changes are permitted.', code: 'PROJECT_ARCHIVED' };
+    }
 }
 
 // ─── list ─────────────────────────────────────────────────────────────────────
@@ -89,6 +99,8 @@ export const update = async (
     const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
     if (!isCreator && !isPrivileged) throw { statusCode: 403, message: 'FORBIDDEN' };
 
+    assertNotArchived(project);
+
     const updated = await projectRepo.update(projectId, body);
     return { statusCode: 200, message: 'PROJECT UPDATED', data: updated };
 };
@@ -106,9 +118,24 @@ export const addMember = async (projectId: string, body: { userId: string }, cur
     const project = await projectRepo.findById(projectId);
     if (!project) throw { statusCode: 404, message: 'PROJECT NOT FOUND' };
 
-    const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
+    const isPrivileged = ['SYSADMIN', 'MANAGER', ...EXECUTIVE_ROLES].includes(currentUser.role);
     const isCreator = String((project as any).createdBy?._id || project.createdBy) === String(currentUser._id);
-    if (!isPrivileged && !isCreator) throw { statusCode: 403, message: 'FORBIDDEN' };
+    
+    // Phase 10: Hierarchy restrictions
+    const actorTier = getRoleTier(currentUser.role, resolvePermissionsSync(currentUser));
+    
+    if (actorTier <= 1) { // Sysadmin/C-Suite can add anyone
+    } else if (currentUser.role === 'CMO') {
+        const isMember = (project.members as any[]).some((m) => String(m.userId?._id || m.userId) === String(currentUser._id));
+        if (!isMember) throw { statusCode: 403, message: 'You can only add users to your own projects' };
+    } else if (currentUser.role === 'MANAGER' || (isCreator && isPrivileged)) {
+        const canInvite = await isInManagersTeam(currentUser._id, body.userId);
+        if (!canInvite) throw { statusCode: 403, message: 'You can only invite members from your team' };
+    } else {
+        throw { statusCode: 403, message: 'Individual contributors cannot invite members' };
+    }
+
+    assertNotArchived(project);
 
     const targetUser = await userRepo.findUserById(body.userId);
     if (!targetUser) throw { statusCode: 404, message: 'USER NOT FOUND' };
@@ -133,15 +160,39 @@ export const addMember = async (projectId: string, body: { userId: string }, cur
 };
 
 // ─── removeMember ─────────────────────────────────────────────────────────────
-export const removeMember = async (projectId: string, userId: string, currentUser: any) => {
+export const removeMember = async (projectId: string, userId: string, currentUser: any, revokeResidual: boolean = false) => {
     const project = await projectRepo.findById(projectId);
     if (!project) throw { statusCode: 404, message: 'PROJECT NOT FOUND' };
 
-    const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
-    const isCreator = String((project as any).createdBy?._id || project.createdBy) === String(currentUser._id);
-    if (!isPrivileged && !isCreator) throw { statusCode: 403, message: 'FORBIDDEN' };
+    assertNotArchived(project);
 
+    const targetUser = await userRepo.findUserById(userId);
+    if (!targetUser) throw { statusCode: 404, message: 'USER NOT FOUND' };
+
+    // Hierarchy restrictions
+    const actorTier = getRoleTier(currentUser.role, resolvePermissionsSync(currentUser));
+    const targetTier = getRoleTier(targetUser.role, resolvePermissionsSync(targetUser));
+
+    if (actorTier <= 1) {
+        if (targetUser.role === 'SYSADMIN' && currentUser.role !== 'SYSADMIN') throw { statusCode: 403, message: 'Only sysadmins can remove sysadmins' };
+    } else if (currentUser.role === 'MANAGER') {
+        const _canManage = await canManage(actorTier, currentUser._id, targetTier, userId);
+        if (!_canManage) throw { statusCode: 403, message: 'You can only remove members who report to you' };
+    } else {
+        throw { statusCode: 403, message: 'Individual contributors cannot remove members' };
+    }
+
+    // Preserve visibility by default in Phase 10
     const updated = await projectRepo.removeMember(projectId, userId);
+    
+    let retainedGrantsCount = 0;
+    if (revokeResidual) {
+        await ProjectModel.findByIdAndUpdate(projectId, {
+            $pull: { visibilityGrants: { grantedTo: userId } }
+        });
+    } else {
+        retainedGrantsCount = (project.visibilityGrants || []).filter((g: any) => String(g.grantedTo) === userId).length;
+    }
 
     await writeAuditLog({
         actorId: String(currentUser._id),
@@ -149,10 +200,14 @@ export const removeMember = async (projectId: string, userId: string, currentUse
         targetType: 'User',
         targetId: userId,
         organisationId: String(currentUser.organisationId),
-        meta: { projectId },
+        meta: { projectId, retainedGrantsCount, residualRevoked: revokeResidual },
     });
 
-    return { statusCode: 200, message: 'MEMBER REMOVED', data: updated };
+    return { 
+        statusCode: 200, 
+        message: 'MEMBER REMOVED', 
+        data: { removed: true, retainedGrants: retainedGrantsCount, canRevokeUrl: `/api/v1/projects/${projectId}/visibility/${userId}/revoke-all` }
+    };
 };
 
 export default { list, create, getById, update, archive, addMember, removeMember };

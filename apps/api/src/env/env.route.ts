@@ -80,6 +80,14 @@ envRouter.get('/:envId/variables', async (req: any, res, next) => {
     } catch (e) { next(e); }
 });
 
+// POST /api/v1/projects/:projectId/envs/:envId/variables/:varId/reveal
+envRouter.post('/:envId/variables/:varId/reveal', async (req: any, res, next) => {
+    try {
+        const result = await envService.revealVariable(req.params.projectId, req.params.envId, req.params.varId, req.currentUser, req.body?.reason);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
 // GET /api/v1/projects/:projectId/envs/:envId/variables/:varId/reveal
 envRouter.get('/:envId/variables/:varId/reveal', async (req: any, res, next) => {
     try {
@@ -94,6 +102,8 @@ const createVarSchema = z.object({
     value:    z.string().min(1),
     isSecret: z.boolean().optional(),
     group:    z.string().optional(),
+    expiresAt: z.string().datetime().optional().nullable(),
+    sensitivityLevel: z.enum(['normal', 'sensitive', 'critical']).optional(),
 });
 envRouter.post('/:envId/variables', body(createVarSchema), async (req: any, res, next) => {
     try {
@@ -124,6 +134,8 @@ const updateVarSchema = z.object({
     value:    z.string().optional(),
     isSecret: z.boolean().optional(),
     group:    z.string().optional(),
+    expiresAt: z.string().datetime().optional().nullable(),
+    sensitivityLevel: z.enum(['normal', 'sensitive', 'critical']).optional(),
 });
 envRouter.patch('/:envId/variables/:varId', body(updateVarSchema), async (req: any, res, next) => {
     try {

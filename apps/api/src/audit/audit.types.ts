@@ -32,6 +32,32 @@ export const AUDIT_ACTIONS = [
     'member.reporting_changed',
     'member.team_assigned',
     'org.snapshot_saved',
+    // ─── Phase 09 ────────────────────────────────────────────────────────────
+    'user.created',
+    'user.updated',
+    'user.deactivated',
+    'user.reactivated',
+    'role.created',
+    'role.updated',
+    'role.deleted',
+    'permission.granted',
+    'permission.revoked',
+    'permission.expired',
+    'permission_request.submitted',
+    'permission_request.approved',
+    'permission_request.rejected',
+    // ─── Phase 10 ────────────────────────────────────────────────────────────
+    'member.type_changed',
+    'project.archived',
+    'project.reactivated',
+    'project.handover',
+    'credential.expiry_set',
+    'credential.reveal_critical',
+    'credential.category_added',
+    'visibility.residual_revoked',
+    'bulk.team_assign',
+    'bulk.role_change',
+    'bulk.deactivate',
 ] as const;
 
 export const auditLogSchemaType = z.object({

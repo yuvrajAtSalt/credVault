@@ -3,7 +3,7 @@
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 interface AvatarProps {
-    name: string;
+    name?: string;
     src?: string;
     size?: AvatarSize;
     className?: string;
@@ -12,7 +12,8 @@ interface AvatarProps {
 const sizeMap: Record<AvatarSize, number> = { sm: 24, md: 32, lg: 40, xl: 56 };
 const fontMap: Record<AvatarSize, number> = { sm: 9,  md: 12, lg: 14, xl: 18 };
 
-function getInitials(name: string) {
+function getInitials(name?: string) {
+    if (!name) return '?';
     const parts = name.trim().split(' ');
     return parts.length >= 2
         ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()

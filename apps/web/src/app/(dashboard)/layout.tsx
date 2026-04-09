@@ -19,14 +19,18 @@ const NAV_ITEMS = [
 ];
 
 const SETTINGS_ITEMS = [
-    { href: '/settings/profile',                label: 'Profile',         adminOnly: false },
-    { href: '/settings/organisation',           label: 'Organisation',    adminOnly: true  },
-    { href: '/settings/organisation/structure', label: 'Org Structure',   adminOnly: true  },
-    { href: '/settings/permissions',            label: 'Permissions',     adminOnly: true  },
-    { href: '/settings/audit-log',              label: 'Audit Log',       adminOnly: true  },
+    { href: '/settings/profile',                   label: 'Profile',              adminOnly: false },
+    { href: '/settings/organisation',              label: 'Organisation',         adminOnly: true  },
+    { href: '/settings/organisation/structure',    label: 'Org Structure',        adminOnly: true  },
+    { href: '/settings/permissions',               label: 'Permissions',          adminOnly: true  },
+    { href: '/settings/permissions/requests',      label: 'Permission Requests',  adminOnly: true  },
+    { href: '/settings/roles',                     label: 'Roles',                adminOnly: true  },
+    { href: '/settings/users',                     label: 'User Management',      adminOnly: true  },
+    { href: '/settings/audit-log',                 label: 'Audit Log',            adminOnly: true  },
 ];
 
-function UserAvatar({ name }: { name: string }) {
+function UserAvatar({ name }: { name?: string }) {
+    if (!name) return <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />;
     const parts = name.trim().split(' ');
     const initials = parts.length >= 2
         ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
@@ -101,6 +105,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         {/* Settings group */}
                         <span className="vault-sidebar__section-label" style={{ marginTop: 16 }}>Settings</span>
                         <button
+                            suppressHydrationWarning
                             onClick={() => setSettingsOpen((v) => !v)}
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',

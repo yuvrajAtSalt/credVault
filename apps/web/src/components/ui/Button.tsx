@@ -38,6 +38,7 @@ export function Button({
 }: ButtonProps) {
     return (
         <button
+            suppressHydrationWarning
             className={variantClass[variant]}
             disabled={disabled || loading}
             style={{ ...sizeStyle[size], opacity: (disabled || loading) ? 0.6 : 1, ...style }}

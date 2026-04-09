@@ -55,7 +55,8 @@ export const list = async (
     const enriched = await Promise.all(
         users.map(async (u: any) => {
             const projects = await projectRepo.findByMember(String(currentUser.organisationId), String(u._id));
-            return { ...u, projectCount: (projects as any[]).length };
+            const plain = u.toObject ? u.toObject() : u;
+            return { ...plain, projectCount: (projects as any[]).length };
         }),
     );
 
@@ -121,7 +122,8 @@ export const orgChart = async (currentUser: any) => {
     // Build map
     const map = new Map<string, any>();
     for (const u of users) {
-        map.set(String(u._id), { ...u, children: [] });
+        const plain = u.toObject ? u.toObject() : u;
+        map.set(String(plain._id), { ...plain, children: [] });
     }
 
     const roots: any[] = [];

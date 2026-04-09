@@ -35,6 +35,9 @@ const credentialRepo = {
         value: string;
         isSecret: boolean;
         environment: string;
+        expiresAt?: Date;
+        rotationReminderDays?: number;
+        sensitivityLevel?: string;
         addedBy: string;
         addedByRole: string;
     }) => CredentialModel.create(data),

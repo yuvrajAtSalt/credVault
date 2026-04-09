@@ -13,6 +13,14 @@ export const credentialSchemaType = z.object({
     value: z.string().min(1),       // AES-256 encrypted at rest (Phase 03)
     isSecret: z.boolean().default(true),
     environment: z.enum([...CREDENTIAL_ENVIRONMENTS] as [string, ...string[]]).default('all'),
+    expiresAt: z.date().optional().nullable(),
+    rotationReminderDays: z.number().default(30),
+    sensitivityLevel: z.enum(['normal', 'sensitive', 'critical']).default('normal'),
+    revealReasons: z.array(z.object({
+        userId: z.string(),
+        reason: z.string(),
+        at: z.date().optional(),
+    })).default([]),
     addedBy: z.string(),
     addedByRole: z.enum([...VAULT_ROLES] as [string, ...string[]]),
     lastEditedBy: z.string().optional(),
@@ -29,6 +37,9 @@ export const createCredentialSchema = z.object({
     value: z.string().min(1, 'Value is required'),
     isSecret: z.boolean().optional(),
     environment: z.enum([...CREDENTIAL_ENVIRONMENTS] as [string, ...string[]]).optional(),
+    expiresAt: z.string().datetime().optional().nullable(),
+    rotationReminderDays: z.number().optional(),
+    sensitivityLevel: z.enum(['normal', 'sensitive', 'critical']).optional(),
 });
 
 export type ICreateCredentialSchema = z.infer<typeof createCredentialSchema>;

@@ -14,6 +14,13 @@ function canSeeAll(currentUser: any): boolean {
     return perms.isGod || perms.canSeeAllCredentials;
 }
 
+// Helper to check archived
+function assertNotArchived(project: any) {
+    if (project.status === 'archived') {
+        throw { statusCode: 403, message: 'This project is archived. No changes are permitted.', code: 'PROJECT_ARCHIVED' };
+    }
+}
+
 // ─── Environments ─────────────────────────────────────────────────────────────
 
 export const listEnvironments = async (projectId: string) => {
@@ -108,12 +115,22 @@ export const updateEnvironment = async (envId: string, body: { name?: string; de
 
     const env = await EnvironmentModel.findByIdAndUpdate(envId, { $set: patch }, { new: true }).lean();
     if (!env) throw { statusCode: 404, message: 'ENVIRONMENT NOT FOUND' };
+    
+    // Assert project is not archived (we assume caller checks project context or we just check if needed - let's fetch project)
+    const projectRepo = (await import('../project/project.repo')).default;
+    const project = await projectRepo.findById(env.projectId as string);
+    if (project) assertNotArchived(project);
+
     return { statusCode: 200, message: 'ENVIRONMENT UPDATED', data: env };
 };
 
 export const deleteEnvironment = async (envId: string, projectId: string, currentUser: any) => {
     const env = await EnvironmentModel.findOneAndDelete({ _id: envId, projectId });
     if (!env) throw { statusCode: 404, message: 'ENVIRONMENT NOT FOUND' };
+
+    const projectRepo = (await import('../project/project.repo')).default;
+    const project = await projectRepo.findById(projectId);
+    if (project) assertNotArchived(project);
 
     // Hard-delete all variables in this environment
     await EnvVariableModel.deleteMany({ environmentId: envId });
@@ -162,7 +179,7 @@ export const listVariables = async (projectId: string, envId: string, currentUse
     return { statusCode: 200, message: 'VARIABLES FETCHED', data: { environment: env, groups, hiddenCount } };
 };
 
-export const revealVariable = async (projectId: string, envId: string, varId: string, currentUser: any) => {
+export const revealVariable = async (projectId: string, envId: string, varId: string, currentUser: any, reason?: string) => {
     const v = await EnvVariableModel.findOne({ _id: varId, environmentId: envId, isDeleted: false }).lean();
     if (!v) throw { statusCode: 404, message: 'VARIABLE NOT FOUND' };
 
@@ -170,14 +187,30 @@ export const revealVariable = async (projectId: string, envId: string, varId: st
     const isOwner = String((v.addedBy as any)?._id ?? v.addedBy) === String(currentUser._id);
     if (!seeAll && !isOwner) throw { statusCode: 403, message: 'FORBIDDEN' };
 
-    await writeAuditLog({
-        actorId: String(currentUser._id),
-        action: 'envvar.reveal',
-        targetType: 'EnvVariable',
-        targetId: varId,
-        organisationId: String(currentUser.organisationId),
-        meta: { key: v.key, envId },
-    });
+    // Phase 10: Log reason for critical
+    if (v.sensitivityLevel === 'critical') {
+        if (!reason && !isOwner) throw { statusCode: 400, message: 'Reason required to reveal critical environment variables' };
+        if (reason) {
+            // Need to just log it to AuditLog as EnvVariable doesn't have revealReasons array yet
+            await writeAuditLog({
+                actorId: String(currentUser._id),
+                action: 'envvar.reveal',
+                targetType: 'EnvVariable',
+                targetId: varId,
+                organisationId: String(currentUser.organisationId),
+                meta: { key: v.key, envId, reason, critical: true },
+            });
+        }
+    } else {
+        await writeAuditLog({
+            actorId: String(currentUser._id),
+            action: 'envvar.reveal',
+            targetType: 'EnvVariable',
+            targetId: varId,
+            organisationId: String(currentUser.organisationId),
+            meta: { key: v.key, envId },
+        });
+    }
 
     let plain: string;
     try { plain = decrypt(v.value); } catch { plain = v.value; }
@@ -188,9 +221,21 @@ export const revealVariable = async (projectId: string, envId: string, varId: st
 export const createVariable = async (
     projectId: string,
     envId: string,
-    body: { key: string; value: string; isSecret?: boolean; group?: string },
+    body: { key: string; value: string; isSecret?: boolean; group?: string; expiresAt?: string; sensitivityLevel?: string },
     currentUser: any,
 ) => {
+    const projectRepo = (await import('../project/project.repo')).default;
+    const project = await projectRepo.findById(projectId);
+    if (project) assertNotArchived(project);
+
+    // Phase 10: only Managers, DevOps, Sysadmin can add 'critical' credentials
+    if (body.sensitivityLevel === 'critical') {
+        const role = currentUser.role as VaultRole;
+        if (!['MANAGER', 'DEVOPS', 'SYSADMIN'].includes(role)) {
+            throw { statusCode: 403, message: 'Only Managers, DevOps, or Sysadmins can add critical variables' };
+        }
+    }
+
     if (!KEY_REGEX.test(body.key)) throw { statusCode: 400, message: 'KEY must match ^[A-Z][A-Z0-9_]*$' };
 
     const exists = await EnvVariableModel.findOne({ environmentId: envId, key: body.key, isDeleted: false });
@@ -204,6 +249,8 @@ export const createVariable = async (
         value: encrypt(body.value),
         isSecret: body.isSecret ?? true,
         group: body.group ?? 'General',
+        expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
+        sensitivityLevel: body.sensitivityLevel ?? 'normal',
         addedBy: currentUser._id,
         addedByRole: currentUser.role,
     });
@@ -223,19 +270,27 @@ export const createVariable = async (
 export const updateVariable = async (
     varId: string,
     envId: string,
-    body: { value?: string; isSecret?: boolean; group?: string },
+    body: { value?: string; isSecret?: boolean; group?: string; expiresAt?: string; sensitivityLevel?: string },
     currentUser: any,
 ) => {
     const v = await EnvVariableModel.findOne({ _id: varId, environmentId: envId, isDeleted: false });
     if (!v) throw { statusCode: 404, message: 'VARIABLE NOT FOUND' };
 
-    const isOwner = String(v.addedBy) === String(currentUser._id);
-    const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
-    if (!isOwner && !isPrivileged) throw { statusCode: 403, message: 'FORBIDDEN' };
+    const projectRepo = (await import('../project/project.repo')).default;
+    const project = await projectRepo.findById(String(v.projectId));
+    if (project) {
+        assertNotArchived(project);
+        const isProjectManager = currentUser.role === 'MANAGER' && (project as any).members.some((m: any) => String(m.userId) === String(currentUser._id));
+        const isSysadmin = currentUser.role === 'SYSADMIN';
+        const isOwner = String(v.addedBy) === String(currentUser._id);
+        if (!isOwner && !isProjectManager && !isSysadmin) throw { statusCode: 403, message: 'FORBIDDEN' };
+    }
 
     if (body.value    !== undefined) v.value    = encrypt(body.value);
     if (body.isSecret !== undefined) v.isSecret = body.isSecret;
     if (body.group    !== undefined) v.group    = body.group;
+    if (body.expiresAt!== undefined) v.expiresAt= body.expiresAt ? new Date(body.expiresAt) : undefined;
+    if (body.sensitivityLevel !== undefined) v.sensitivityLevel = body.sensitivityLevel;
     v.lastEditedBy = new Types.ObjectId(String(currentUser._id)) as any;
     v.lastEditedAt = new Date();
     await v.save();
@@ -256,9 +311,15 @@ export const deleteVariable = async (varId: string, envId: string, currentUser: 
     const v = await EnvVariableModel.findOne({ _id: varId, environmentId: envId, isDeleted: false });
     if (!v) throw { statusCode: 404, message: 'VARIABLE NOT FOUND' };
 
-    const isOwner = String(v.addedBy) === String(currentUser._id);
-    const isPrivileged = ['SYSADMIN', 'MANAGER'].includes(currentUser.role);
-    if (!isOwner && !isPrivileged) throw { statusCode: 403, message: 'FORBIDDEN' };
+    const projectRepo = (await import('../project/project.repo')).default;
+    const project = await projectRepo.findById(String(v.projectId));
+    if (project) {
+        assertNotArchived(project);
+        const isProjectManager = currentUser.role === 'MANAGER' && (project as any).members.some((m: any) => String(m.userId) === String(currentUser._id));
+        const isSysadmin = currentUser.role === 'SYSADMIN';
+        const isOwner = String(v.addedBy) === String(currentUser._id);
+        if (!isOwner && !isProjectManager && !isSysadmin) throw { statusCode: 403, message: 'FORBIDDEN' };
+    }
 
     v.isDeleted = true;
     await v.save();
@@ -322,6 +383,9 @@ export const exportEnvironment = async (projectId: string, envId: string, format
 
     const vars = await EnvVariableModel.find({ environmentId: envId, isDeleted: false }).lean();
     const decoded = vars.map((v) => {
+        if (v.sensitivityLevel === 'critical') {
+            return { key: v.key, value: '[REDACTED — critical credential]', group: v.group };
+        }
         let val: string;
         try { val = decrypt(v.value); } catch { val = v.value; }
         return { key: v.key, value: val, group: v.group };

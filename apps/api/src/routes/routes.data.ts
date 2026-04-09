@@ -10,8 +10,14 @@ import auditRoutes from '../audit/audit.route';
 import orgRoutes from '../organisation/organisation.route';
 import envRoutes from '../env/env.route';
 import orgHierarchyRoutes from '../org/org.route';
+import adminRoutes from '../admin/admin.route';
+import permissionRequestRoutes from '../admin/permission-request.route';
 
-export const routes: Route[] = [authRoutes, userRoutes, memberRoutes, projectRoutes, credentialRoutes, auditRoutes, orgRoutes, envRoutes, orgHierarchyRoutes];
+export const routes: Route[] = [
+    authRoutes, userRoutes, memberRoutes, projectRoutes,
+    credentialRoutes, auditRoutes, orgRoutes, envRoutes,
+    orgHierarchyRoutes, adminRoutes, permissionRequestRoutes,
+];
 
 
 
