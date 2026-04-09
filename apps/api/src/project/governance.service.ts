@@ -188,6 +188,66 @@ export const getMemberProjects = async (userId: string, currentUser: any) => {
     return { statusCode: 200, message: 'MEMBER PROJECTS FETCHED', data: formatted };
 };
 
+export const addProjectLink = async (projectId: string, body: { title: string; url: string }, currentUser: any) => {
+    const project = await ProjectModel.findById(projectId);
+    if (!project) throw { statusCode: 404, message: 'PROJECT NOT FOUND' };
+
+    const isMember = project.members.some(m => String(m.userId) === String(currentUser._id));
+    const isManager = String((project as any).createdBy) === String(currentUser._id);
+    const isSysAdmin = currentUser.role === 'SYSADMIN';
+
+    if (!isMember && !isManager && !isSysAdmin) throw { statusCode: 403, message: 'FORBIDDEN' };
+
+    const updated = await ProjectModel.findByIdAndUpdate(
+        projectId,
+        { $push: { links: { ...body, addedBy: currentUser._id, addedAt: new Date() } } },
+        { new: true }
+    );
+
+    await writeAuditLog({
+        actorId: String(currentUser._id),
+        action: 'project.link_added',
+        targetType: 'Project',
+        targetId: projectId,
+        organisationId: String(currentUser.organisationId),
+        meta: body,
+    });
+
+    return { statusCode: 200, message: 'LINK ADDED', data: updated };
+};
+
+export const removeProjectLink = async (projectId: string, linkId: string, currentUser: any) => {
+    const project = await ProjectModel.findById(projectId);
+    if (!project) throw { statusCode: 404, message: 'PROJECT NOT FOUND' };
+
+    const link = (project as any).links.find((l: any) => String(l._id) === linkId);
+    if (!link) throw { statusCode: 404, message: 'LINK NOT FOUND' };
+
+    const isManager = String((project as any).createdBy) === String(currentUser._id);
+    const isAdder = String(link.addedBy) === String(currentUser._id);
+    const isSysAdmin = currentUser.role === 'SYSADMIN';
+
+    if (!isManager && !isAdder && !isSysAdmin) throw { statusCode: 403, message: 'FORBIDDEN' };
+
+    const updated = await ProjectModel.findByIdAndUpdate(
+        projectId,
+        { $pull: { links: { _id: linkId } } },
+        { new: true }
+    );
+
+    await writeAuditLog({
+        actorId: String(currentUser._id),
+        action: 'project.link_removed',
+        targetType: 'Project',
+        targetId: projectId,
+        organisationId: String(currentUser.organisationId),
+        meta: { linkId, title: link.title },
+    });
+
+    return { statusCode: 200, message: 'LINK REMOVED', data: updated };
+};
+
 export default {
-    handover, revokeResidualAccess, updateMember, addCustomCategory, reactivate, getCredentialHistory, getMemberProjects
+    handover, revokeResidualAccess, updateMember, addCustomCategory, 
+    reactivate, getCredentialHistory, getMemberProjects, addProjectLink, removeProjectLink
 };

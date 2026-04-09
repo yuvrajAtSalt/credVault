@@ -59,6 +59,8 @@ export const AUDIT_ACTIONS = [
     'bulk.role_change',
     'bulk.deactivate',
     'account.password_reset_self',
+    'project.link_added',
+    'project.link_removed',
 ] as const;
 
 export const auditLogSchemaType = z.object({

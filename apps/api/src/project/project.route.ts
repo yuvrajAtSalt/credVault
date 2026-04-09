@@ -130,11 +130,18 @@ projectRouter.post('/:id/credential-categories', body(z.object({
     } catch (e) { next(e); }
 });
 
-// ─── Credential History (Phase 10) ────────────────────────────────────────────
-
-projectRouter.get('/:id/credentials/:credId/history', async (req: any, res, next) => {
+// ─── Project Links (Phase 11) ────────────────────────────────────────────────
+const linkSchema = z.object({ title: z.string().min(1), url: z.string().url() });
+projectRouter.post('/:id/links', body(linkSchema), async (req: any, res, next) => {
     try {
-        const result = await governanceService.getCredentialHistory(req.params.id, req.params.credId, req.currentUser);
+        const result = await governanceService.addProjectLink(req.params.id, req.body, req.currentUser);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
+projectRouter.delete('/:id/links/:linkId', async (req: any, res, next) => {
+    try {
+        const result = await governanceService.removeProjectLink(req.params.id, req.params.linkId, req.currentUser);
         res.status(result.statusCode).send(new ResponseHandler(result));
     } catch (e) { next(e); }
 });

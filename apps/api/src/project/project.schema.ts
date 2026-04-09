@@ -31,6 +31,16 @@ const visibilityGrantSubSchema = new Schema(
     { _id: false },
 );
 
+const linkSubSchema = new Schema(
+    {
+        title:   { type: String, required: true, trim: true },
+        url:     { type: String, required: true, trim: true },
+        addedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        addedAt: { type: Date, default: Date.now },
+    },
+    { _id: true },
+);
+
 const projectSchema = new Schema<IProjectSchema>(
     {
         organisationId:        { type: Schema.Types.ObjectId as any, ref: 'Organisation', required: true },
@@ -43,6 +53,7 @@ const projectSchema = new Schema<IProjectSchema>(
         members:               { type: [memberSubSchema], default: [] },
         visibilityGrants:      { type: [visibilityGrantSubSchema], default: [] },
         credentialCategories:  { type: [credentialCategorySubSchema], default: [] },
+        links:                 { type: [linkSubSchema], default: [] },
         isDeleted:             { type: Boolean, default: false },
     },
     { timestamps: true },

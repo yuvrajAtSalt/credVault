@@ -17,6 +17,13 @@ const visibilityGrantSchema = z.object({
     grantedAt: z.date().optional(),
 });
 
+const linkSchema = z.object({
+    title: z.string().min(1),
+    url: z.string(),
+    addedBy: z.string(),
+    addedAt: z.date().optional(),
+});
+
 export const projectSchemaType = z.object({
     _id: z.string().optional(),
     organisationId: z.string(),
@@ -31,6 +38,7 @@ export const projectSchemaType = z.object({
     credentialCategories: z.array(z.object({
         name: z.string(), icon: z.string().optional(), slug: z.string(),
     })).default([]),
+    links: z.array(linkSchema).default([]),
     isDeleted: z.boolean().optional(),
 });
 
