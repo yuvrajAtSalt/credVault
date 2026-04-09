@@ -38,6 +38,8 @@ type PopulatedProject = {
     status: string;
     members: PopulatedMember[];
     links: PopulatedLink[];
+    criticality: 'low' | 'medium' | 'high' | 'mission_critical';
+    runbooks: Array<{ name: string, content: string, addedAt: string }>;
     createdBy: { _id: string; name: string };
     createdAt: string;
 };
@@ -48,7 +50,7 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'neutral'> = {
     active: 'success', planning: 'warning', archived: 'neutral',
 };
 
-type Tab = 'credentials' | 'environments' | 'resources' | 'members';
+type Tab = 'credentials' | 'environments' | 'resources' | 'members' | 'runbooks';
 
 export default function ProjectDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -71,6 +73,11 @@ export default function ProjectDetailPage() {
     const [newLink, setNewLink]         = useState({ title: '', url: '' });
     const [addingLink, setAddingLink]   = useState(false);
     const [previewLink, setPreviewLink] = useState<PopulatedLink | null>(null);
+
+    const [showAddRunbook, setShowAddRunbook] = useState(false);
+    const [selectedRunbookIdx, setSelectedRunbookIdx] = useState<number | null>(0);
+    const [newRunbook, setNewRunbook] = useState({ name: '', content: '' });
+    const [addingRunbook, setAddingRunbook] = useState(false);
 
     const getPreviewUrl = (url: string) => {
         if (url.includes('docs.google.com/document/d/')) {
@@ -150,6 +157,18 @@ export default function ProjectDetailPage() {
         await fetchProject();
     };
 
+    const handleAddRunbook = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAddingRunbook(true);
+        const { error: err } = await api.post(`/api/v1/projects/${id}/runbooks`, newRunbook);
+        if (!err) {
+            await fetchProject();
+            setShowAddRunbook(false);
+            setNewRunbook({ name: '', content: '' });
+        }
+        setAddingRunbook(false);
+    };
+
     if (loading) return <main className="vault-page"><p style={{ color: 'var(--vault-ink-muted)' }}>Loading project…</p></main>;
     if (error || !project) return (
         <main className="vault-page">
@@ -164,6 +183,7 @@ export default function ProjectDetailPage() {
         { key: 'credentials', label: 'Credentials' },
         { key: 'environments', label: 'Environments' },
         { key: 'resources',    label: 'Resources' },
+        { key: 'runbooks',     label: 'Runbooks' },
         { key: 'members',     label: `Members (${project.members.length})` },
     ];
 
@@ -182,6 +202,32 @@ export default function ProjectDetailPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
                             <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>{project.name}</h1>
                             <Badge variant={STATUS_VARIANT[project.status] ?? 'neutral'}>{project.status}</Badge>
+                            
+                            <div 
+                                onClick={async () => {
+                                    if (!canManage) return;
+                                    const levels: any[] = ['low', 'medium', 'high', 'mission_critical'];
+                                    const next = levels[(levels.indexOf(project.criticality) + 1) % levels.length];
+                                    await api.patch(`/api/v1/projects/${id}`, { criticality: next });
+                                    fetchProject();
+                                }}
+                                style={{ 
+                                    cursor: canManage ? 'pointer' : 'default',
+                                    padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    background: project.criticality === 'mission_critical' ? '#FFF0F0' : 
+                                               project.criticality === 'high' ? '#FFF7E6' : '#F4F5F7',
+                                    color: project.criticality === 'mission_critical' ? '#DE350B' :
+                                           project.criticality === 'high' ? '#FF8B00' : '#42526E',
+                                    border: `1px solid ${
+                                        project.criticality === 'mission_critical' ? '#FFBDAD' : 
+                                        project.criticality === 'high' ? '#FFE380' : 'transparent'
+                                    }`
+                                }}
+                                title={canManage ? 'Click to cycle criticality' : 'Project Criticality'}
+                            >
+                                {project.criticality?.replace('_', ' ') || 'medium'}
+                            </div>
                         </div>
                         {project.description && (
                             <p style={{ fontSize: 14, color: 'var(--vault-ink-muted)', margin: '0 0 10px' }}>{project.description}</p>
@@ -371,6 +417,70 @@ export default function ProjectDetailPage() {
                 </div>
             )}
 
+            {activeTab === 'runbooks' && (
+                <div className="vault-card">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                        <div>
+                            <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--vault-ink)', margin: 0 }}>Project Runbooks</h2>
+                            <p style={{ fontSize: 12, color: 'var(--vault-ink-muted)', marginTop: 2 }}>Operational procedures and troubleshooting guides.</p>
+                        </div>
+                        {canManage && (
+                            <Button variant="secondary" size="sm" onClick={() => setShowAddRunbook(true)}>+ Add runbook</Button>
+                        )}
+                    </div>
+
+                    {project.runbooks?.length === 0 ? (
+                        <div style={{ padding: '60px 20px', textAlign: 'center', background: 'var(--vault-surface)', borderRadius: 8, border: '2px dashed var(--vault-border)' }}>
+                            <div style={{ fontSize: 32, marginBottom: 12 }}>📖</div>
+                            <p style={{ color: 'var(--vault-ink)', fontSize: 15, fontWeight: 600 }}>No runbooks yet</p>
+                            <p style={{ color: 'var(--vault-ink-muted)', fontSize: 13, marginTop: 4 }}>Document deployment steps, emergency rotations, or environment setup guides.</p>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, minHeight: 400 }}>
+                            {/* Sidebar list */}
+                            <div style={{ borderRight: '1px solid var(--vault-border)', paddingRight: 20 }}>
+                                {project.runbooks.map((rb: any, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setSelectedRunbookIdx(idx)}
+                                        style={{
+                                            display: 'block', width: '100%', textAlign: 'left',
+                                            padding: '10px 12px', borderRadius: 6, border: 'none',
+                                            background: selectedRunbookIdx === idx ? 'var(--vault-primary-faint)' : 'none',
+                                            color: selectedRunbookIdx === idx ? 'var(--vault-primary)' : 'var(--vault-ink)',
+                                            fontWeight: selectedRunbookIdx === idx ? 600 : 400,
+                                            cursor: 'pointer', fontSize: 13, marginBottom: 4
+                                        }}
+                                    >
+                                        {rb.name}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            {/* Content view */}
+                            <div style={{ flex: 1 }}>
+                                {selectedRunbookIdx !== null && project.runbooks[selectedRunbookIdx] ? (
+                                    <div>
+                                        <h3 style={{ margin: '0 0 16px', fontSize: 20 }}>{project.runbooks[selectedRunbookIdx].name}</h3>
+                                        <div style={{ 
+                                            padding: 20, background: 'var(--vault-surface)', 
+                                            borderRadius: 8, border: '1px solid var(--vault-border)',
+                                            fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap', fontFamily: 'monospace'
+                                        }}>
+                                            {project.runbooks[selectedRunbookIdx].content}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', paddingTop: 100, color: 'var(--vault-ink-muted)' }}>
+                                        Select a runbook from the list to view content.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {activeTab === 'members' && (
                 <div className="vault-card">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -490,6 +600,35 @@ export default function ProjectDetailPage() {
                         </div>
                     </div>
                 )}
+            </Modal>
+            <Modal isOpen={showAddRunbook} onClose={() => setShowAddRunbook(false)} title="Add operational runbook" width="md">
+                <form onSubmit={handleAddRunbook} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--vault-ink-muted)', marginBottom: 6 }}>Runbook Title</label>
+                        <Input 
+                            placeholder="e.g. Master Key Rotation Procedure" 
+                            required 
+                            value={newRunbook.name} 
+                            onChange={e => setNewRunbook({ ...newRunbook, name: e.target.value })}
+                            autoFocus
+                        />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--vault-ink-muted)', marginBottom: 6 }}>Content (Markdown supported)</label>
+                        <textarea 
+                            className="vault-input"
+                            style={{ minHeight: 240, fontFamily: 'monospace', fontSize: 13, resize: 'vertical' }}
+                            placeholder="# Step 1: ..." 
+                            required 
+                            value={newRunbook.content} 
+                            onChange={e => setNewRunbook({ ...newRunbook, content: e.target.value })}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+                        <Button variant="secondary" onClick={() => setShowAddRunbook(false)}>Cancel</Button>
+                        <Button type="submit" loading={addingRunbook}>Create Runbook</Button>
+                    </div>
+                </form>
             </Modal>
         </main>
     );

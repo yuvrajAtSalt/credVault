@@ -29,6 +29,7 @@ const credentialSchema = new Schema<ICredentialSchema>(
         lastEditedBy:         { type: Schema.Types.ObjectId as any, ref: 'User' },
         lastEditedAt:         { type: Date },
         lastExpiryNoticeSentAt:{ type: Date },
+        requiresDualApproval: { type: Boolean, default: false },
         isDeleted:            { type: Boolean, default: false },
     },
     { timestamps: true },

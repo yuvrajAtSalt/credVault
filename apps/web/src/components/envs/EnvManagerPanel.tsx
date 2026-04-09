@@ -583,6 +583,7 @@ export function EnvVariableEditor({ projectId, environment, baseEnvKeys, onEnvsC
     const [showCompare, setShowCompare] = useState(false);
     const [prefillKey, setPrefillKey] = useState<string | undefined>();
     const [showExportMenu, setExport] = useState(false);
+    const [sharingPolicy, setSharingPolicy] = useState<any>(null);
     const exportRef = useRef<HTMLDivElement>(null);
 
     const fetchVars = useCallback(async () => {
@@ -594,7 +595,13 @@ export function EnvVariableEditor({ projectId, environment, baseEnvKeys, onEnvsC
         setLoading(false);
     }, [projectId, environment._id]);
 
-    useEffect(() => { fetchVars(); }, [fetchVars]);
+    useEffect(() => {
+        fetchVars();
+        // Fetch org policy
+        api.get<any>('/api/v1/organisation').then(res => {
+            setSharingPolicy(res.data?.data?.credentialSharingPolicy);
+        });
+    }, [fetchVars]);
 
     const handleDelete = async (varId: string) => {
         await api.delete(`/api/v1/projects/${projectId}/envs/${environment._id}/variables/${varId}`);
@@ -603,20 +610,58 @@ export function EnvVariableEditor({ projectId, environment, baseEnvKeys, onEnvsC
     };
 
     const handleExport = async (format: string, clipboard = false) => {
-        const url = `/api/v1/projects/${projectId}/envs/${environment._id}/export?format=${format}`;
+        if (sharingPolicy) {
+            if (clipboard && !sharingPolicy.allowCopyToClipboard) {
+                toast.error('Copy to clipboard is disabled by organisation policy.');
+                return;
+            }
+            if (format === 'dotenv' && !sharingPolicy.allowEnvFileExport) {
+                toast.error('Environment file export is disabled by organisation policy.');
+                return;
+            }
+        }
+
+        let reason = '';
+        if (sharingPolicy?.requireExportJustification) {
+            reason = window.prompt('Please provide a justification for this export (required by policy):') || '';
+            if (!reason) {
+                toast.error('Justification is required to proceed with export.');
+                return;
+            }
+        }
+
+        const url = `/api/v1/projects/${projectId}/envs/${environment._id}/export?format=${format}&reason=${encodeURIComponent(reason)}`;
         if (clipboard) {
-            const res = await fetch(url, { credentials: 'include' });
-            const text = await res.text();
-            await navigator.clipboard.writeText(text);
-            toast.success('Copied to clipboard!');
+            try {
+                const res = await fetch(url, { credentials: 'include' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    toast.error(err.error?.message || 'Export failed');
+                    return;
+                }
+                const text = await res.text();
+                await navigator.clipboard.writeText(text);
+                toast.success('Copied to clipboard!');
+            } catch (e) {
+                toast.error('Failed to copy to clipboard');
+            }
         } else {
-            const res  = await fetch(url, { credentials: 'include' });
-            const blob = await res.blob();
-            const a    = document.createElement('a');
-            a.href     = URL.createObjectURL(blob);
-            a.download = `${environment.slug}.${format === 'dotenv' ? 'env' : format}`;
-            a.click();
-            toast.info(`Exporting ${environment.name} as ${format}`);
+            try {
+                const res  = await fetch(url, { credentials: 'include' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    toast.error(err.error?.message || 'Export failed');
+                    return;
+                }
+                const blob = await res.blob();
+                const a    = document.createElement('a');
+                a.href     = URL.createObjectURL(blob);
+                a.download = `${environment.slug}.${format === 'dotenv' ? 'env' : format}`;
+                a.click();
+                toast.info(`Exporting ${environment.name} as ${format}`);
+            } catch (e) {
+                toast.error('Failed to download file');
+            }
         }
         setExport(false);
     };

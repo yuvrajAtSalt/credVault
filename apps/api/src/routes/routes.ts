@@ -31,6 +31,10 @@ export const registerMiddlewares = (app: Application) => {
     // ─── Auth guard ──────────────────────────────────────────────────
     app.use(validateToken(excludedRoutes));
 
+    // ─── Compliance guard ─────────────────────────────────────────────
+    const { checkChangeWindow } = require('../compliance/compliance.middleware');
+    app.use(checkChangeWindow);
+
     // ─── Module routes ───────────────────────────────────────────────
     for (const route of routes) {
         app.use(route.path, route.router);

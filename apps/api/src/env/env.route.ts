@@ -156,8 +156,9 @@ envRouter.delete('/:envId/variables/:varId', async (req: any, res, next) => {
 envRouter.get('/:envId/export', async (req: any, res, next) => {
     try {
         const format = (req.query.format as string) || 'dotenv';
+        const reason = (req.query.reason as string);
         const { content, contentType, filename } = await envService.exportEnvironment(
-            req.params.projectId, req.params.envId, format, req.currentUser,
+            req.params.projectId, req.params.envId, format, req.currentUser, reason,
         );
         res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

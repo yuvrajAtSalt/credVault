@@ -39,6 +39,13 @@ export const projectSchemaType = z.object({
         name: z.string(), icon: z.string().optional(), slug: z.string(),
     })).default([]),
     links: z.array(linkSchema).default([]),
+    criticality: z.enum(['low', 'medium', 'high', 'mission_critical']).default('medium'),
+    runbooks: z.array(z.object({
+        name: z.string(),
+        content: z.string(),
+        addedBy: z.string().optional(),
+        addedAt: z.date().optional(),
+    })).default([]),
     isDeleted: z.boolean().optional(),
 });
 
@@ -50,6 +57,7 @@ export const createProjectSchema = z.object({
     color: z.string().optional(),
     tags: z.array(z.string()).optional(),
     status: z.enum(['active', 'archived', 'planning']).optional(),
+    criticality: z.enum(['low', 'medium', 'high', 'mission_critical']).optional(),
 });
 
 export type ICreateProjectSchema = z.infer<typeof createProjectSchema>;

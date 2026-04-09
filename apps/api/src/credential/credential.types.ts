@@ -26,6 +26,7 @@ export const credentialSchemaType = z.object({
     lastEditedBy: z.string().optional(),
     lastEditedAt: z.date().optional(),
     lastExpiryNoticeSentAt: z.date().optional(),
+    requiresDualApproval: z.boolean().default(false),
     isDeleted: z.boolean().default(false),
 });
 
@@ -41,6 +42,7 @@ export const createCredentialSchema = z.object({
     expiresAt: z.string().datetime().optional().nullable(),
     rotationReminderDays: z.number().optional(),
     sensitivityLevel: z.enum(['normal', 'sensitive', 'critical']).optional(),
+    requiresDualApproval: z.boolean().optional(),
 });
 
 export type ICreateCredentialSchema = z.infer<typeof createCredentialSchema>;

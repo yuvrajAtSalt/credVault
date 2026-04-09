@@ -1,0 +1,36 @@
+# Phase 13 Status: Project Governance & Compliance
+
+## Progress Summary
+- [x] **1. Access Review Cycles** (Completed)
+- [x] **2. Offboarding Workflow** (Completed)
+- [x] **3. Credential Sharing Policy** (Completed)
+- [x] **4. Change Windows** (Completed)
+- [ ] **5. Project Health Dashboard** (Current)
+- [ ] **6. Compliance Reports** (Planned)
+- [ ] **7. Business Criticality** (Planned)
+- [ ] **8. Runbook Attachments** (Planned)
+- [ ] **9. Two-person Rule** (Planned)
+- [ ] **10. Weekly Digest** (Planned)
+
+---
+
+## Detailed Task Checklist
+
+### 1. Access Review Cycles
+- [x] **Back-end: Data Layer**
+    - [x] Create `apps/api/src/compliance/access-review.schema.ts`
+    - [x] Update `apps/api/src/organisation/organisation.schema.ts` with `accessReviewPolicy`
+- [x] **Back-end: API Logic**
+    - [x] Implement `POST /v1/access-reviews/initiate`
+    - [x] Implement `GET /v1/access-reviews`
+    - [x] Implement `PATCH /v1/access-reviews/:id/members/:userId`
+    - [x] Implement `POST /v1/access-reviews/:id/complete`
+- [x] **Back-end: Automation**
+    - [x] Daily cron job in `apps/api/src/cron/cron.route.ts`
+- [x] **Front-end: UI**
+    - [x] Settings Page: Access Review List (`/settings/access-reviews`)
+    - [x] Settings Page: Access Review Detail (`/settings/access-reviews/:id`)
+    - [x] Org settings configuration (`/settings/organisation/general`)
+
+### 2. Offboarding Workflow
+...

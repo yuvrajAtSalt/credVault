@@ -154,6 +154,9 @@ export default function UsersPage() {
                                         <div style={{ display: 'flex', gap: 6 }}>
                                             <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => setEditUser(u)}>Edit</button>
                                             <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => setPermUser(u)}>Permissions</button>
+                                            {u.isActive && (
+                                                <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px', color: 'var(--vault-danger)' }} onClick={() => setOffboardUser(u)}>Offboard</button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

@@ -29,6 +29,7 @@ interface Credential {
     environment: string;
     addedBy: { _id: string; name: string; role: any };
     addedByRole: any;
+    requiresDualApproval?: boolean;
     createdAt: string;
 }
 

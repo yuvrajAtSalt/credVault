@@ -22,6 +22,7 @@ interface Credential {
     isSecret: boolean;
     environment: string;
     sensitivityLevel?: 'normal' | 'sensitive' | 'critical';
+    requiresDualApproval?: boolean;
     addedBy: { _id: string; name: string; role: VaultRole };
     addedByRole: VaultRole;
     createdAt: string;
@@ -46,6 +47,7 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
     // Phase 10: Critical credential prompt
     const [promptingReason, setPromptingReason] = useState(false);
     const [reason, setReason]                   = useState('');
+    const [isDualRequest, setIsDualRequest]     = useState(false);
 
     const envStyle = ENV_COLORS[cred.environment] ?? ENV_COLORS.all;
 
@@ -53,7 +55,7 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
         if (e) e.preventDefault();
         if (revealed) { setRevealed(false); setRevealedVal(''); return; }
 
-        if (cred.sensitivityLevel === 'critical' && !reason && currentUserId !== cred.addedBy._id) {
+        if (cred.sensitivityLevel === 'critical' && !reason && currentUserId !== cred.addedBy._id && !isDualRequest) {
             setPromptingReason(true);
             return;
         }
@@ -61,12 +63,39 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
         setRevealing(true);
         const { data, error } = await api.post<any>(`/api/v1/projects/${projectId}/credentials/${cred._id}/reveal`, { reason });
         setRevealing(false);
-        if (error) { alert(error.message); return; }
+        
+        if (error) { 
+            if (error.code === 'DUAL_APPROVAL_REQUIRED') {
+                setIsDualRequest(true);
+                setPromptingReason(true);
+                return;
+            }
+            alert(error.message); 
+            return; 
+        }
         
         setRevealedVal((data as any)?.data?.value ?? '');
         setRevealed(true);
         setPromptingReason(false);
+        setIsDualRequest(false);
         setReason('');
+    };
+
+    const handleRequestApproval = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setRevealing(true);
+        const { error } = await api.post('/api/v1/compliance/approvals', {
+            projectId,
+            credentialId: cred._id,
+            reason
+        });
+        setRevealing(false);
+        if (error) { alert(error.message); return; }
+        
+        alert('Access request submitted. A peer must approve it before you can reveal this secret.');
+        setPromptingReason(false);
+        setReason('');
+        setIsDualRequest(false);
     };
 
     const handleCopy = async () => {
@@ -183,22 +212,27 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
                 userSelect: revealed ? 'text' : 'none',
             }}>
                 {promptingReason ? (
-                    <form onSubmit={handleReveal} style={{ display: 'flex', gap: 8 }}>
+                    <form onSubmit={isDualRequest ? handleRequestApproval : handleReveal} style={{ display: 'flex', gap: 8 }}>
                         <input
                             autoFocus
-                            placeholder="Reason for revealing critical credential..."
+                            placeholder={isDualRequest ? "Justification for access request..." : "Reason for revealing critical credential..."}
                             value={reason} onChange={e => setReason(e.target.value)}
                             style={{ flex: 1, border: '1px solid var(--vault-border)', padding: '4px 8px', fontSize: 12, borderRadius: 3, letterSpacing: 'normal', outline: 'none' }}
                         />
-                        <button type="submit" disabled={!reason.trim()} style={{ background: 'var(--vault-primary)', color: '#fff', border: 'none', borderRadius: 3, padding: '0 10px', fontSize: 12, fontWeight: 600, cursor: reason.trim() ? 'pointer' : 'not-allowed' }}>
-                            Confirm
+                        <button type="submit" disabled={!reason.trim() || revealing} style={{ background: 'var(--vault-primary)', color: '#fff', border: 'none', borderRadius: 3, padding: '0 10px', fontSize: 12, fontWeight: 600, cursor: (reason.trim() && !revealing) ? 'pointer' : 'not-allowed' }}>
+                            {revealing ? '...' : isDualRequest ? 'Request Approval' : 'Confirm'}
                         </button>
-                        <button type="button" onClick={() => setPromptingReason(false)} style={{ background: 'var(--vault-bg-hover)', color: 'var(--vault-ink)', border: 'none', borderRadius: 3, padding: '0 8px', fontSize: 12, cursor: 'pointer' }}>
+                        <button type="button" onClick={() => { setPromptingReason(false); setIsDualRequest(false); }} style={{ background: 'var(--vault-bg-hover)', color: 'var(--vault-ink)', border: 'none', borderRadius: 3, padding: '0 8px', fontSize: 12, cursor: 'pointer' }}>
                             Cancel
                         </button>
                     </form>
                 ) : (
-                    revealed ? revealedVal : '••••••••••••••••'
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>{revealed ? revealedVal : '••••••••••••••••'}</span>
+                        {cred.requiresDualApproval && !revealed && (
+                            <span style={{ fontSize: 9, color: 'var(--vault-ink-muted)', fontStyle: 'italic' }}>Two-Person Rule Active</span>
+                        )}
+                    </div>
                 )}
             </div>
 

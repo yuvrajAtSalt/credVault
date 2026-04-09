@@ -87,10 +87,31 @@ export const reveal = async (projectId: string, credId: string, currentUser: any
     if (!cred || cred.projectId.toString() !== projectId) throw { statusCode: 404, message: 'CREDENTIAL NOT FOUND' };
 
     const project = await projectRepo.findById(projectId);
+    const role = currentUser.role as VaultRole;
+    const perms = BASE_PERMISSIONS[role];
     const scope = resolveScope(project, currentUser);
 
     const isOwner = String((cred.addedBy as any)?._id ?? cred.addedBy) === String(currentUser._id);
     if (scope !== 'all' && !isOwner) throw { statusCode: 403, message: 'FORBIDDEN' };
+
+    // Two-person rule check
+    if ((cred as any).requiresDualApproval && !perms.isGod) {
+        const { ApprovalRequestModel } = await import('../compliance/approval-request.schema');
+        const activeApproval = await ApprovalRequestModel.findOne({
+            credentialId: credId,
+            requesterId: currentUser._id,
+            status: 'approved',
+            expiresAt: { $gt: new Date() }
+        }).lean();
+
+        if (!activeApproval) {
+            throw { 
+                statusCode: 403, 
+                message: 'This credential requires dual approval. Please submit an access request and wait for a peer to approve it.',
+                code: 'DUAL_APPROVAL_REQUIRED'
+            };
+        }
+    }
 
     await writeAuditLog({
         actorId: String(currentUser._id),
@@ -103,6 +124,7 @@ export const reveal = async (projectId: string, credId: string, currentUser: any
 
     // Phase 10: Log reason for critical
     if (cred.sensitivityLevel === 'critical') {
+        const isOwner = String((cred.addedBy as any)?._id ?? cred.addedBy) === String(currentUser._id);
         if (!reason && !isOwner) throw { statusCode: 400, message: 'Reason required to reveal critical credentials' };
         if (reason) {
             await CredentialModel.updateOne({ _id: credId }, {

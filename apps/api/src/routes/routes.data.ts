@@ -16,6 +16,7 @@ import notificationRoutes from '../notification/notification.route';
 import cronRoutes from '../cron/cron.route';
 import realtimeRoutes from '../routes/realtime.route';
 import searchRoutes from '../search/search.route';
+import complianceRoutes from '../compliance/compliance.route';
 
 import devEmailRoutes from '../utils/email/dev-email.route';
 
@@ -23,7 +24,8 @@ export const routes: Route[] = [
     authRoutes, userRoutes, memberRoutes, projectRoutes,
     credentialRoutes, auditRoutes, orgRoutes, envRoutes,
     orgHierarchyRoutes, adminRoutes, permissionRequestRoutes,
-    notificationRoutes, devEmailRoutes, cronRoutes, realtimeRoutes, searchRoutes
+    notificationRoutes, devEmailRoutes, cronRoutes, realtimeRoutes, searchRoutes,
+    complianceRoutes
 ];
 
 

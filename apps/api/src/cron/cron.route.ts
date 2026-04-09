@@ -141,4 +141,83 @@ cronRouter.get('/process-email-queue', async (req, res) => {
     }
 });
 
+cronRouter.get('/check-access-reviews', async (req, res) => {
+    try {
+        const { AccessReviewModel } = await import('../compliance/access-review.schema');
+        const { OrganisationModel } = await import('../organisation/organisation.schema');
+        const { ProjectModel }      = await import('../project/project.schema');
+        const { writeAuditLog }     = await import('../audit/audit.repo');
+
+        const now = new Date();
+        const overdueReviews = await AccessReviewModel.find({
+            status: { $in: ['pending', 'in_progress'] },
+            dueDate: { $lt: now }
+        });
+
+        if (overdueReviews.length === 0) return res.json({ status: 'idle', count: 0 });
+
+        let revokedCount = 0;
+
+        for (const review of overdueReviews) {
+            review.status = 'overdue';
+            
+            const org = await OrganisationModel.findById(review.organisationId).lean() as any;
+            if (org?.accessReviewPolicy?.autoRevokeOnMiss) {
+                const pendingMembers = review.membersToReview.filter(m => m.decision === 'pending');
+                
+                for (const member of pendingMembers) {
+                    member.decision = 'removed';
+                    member.note = 'Auto-revoked due to overdue access review';
+                    member.decidedAt = now;
+
+                    // Remove from project
+                    await ProjectModel.updateOne(
+                        { _id: review.projectId as any },
+                        { $pull: { members: { userId: member.userId } } } as any
+                    );
+                    // Revoke visibility grants
+                    await ProjectModel.updateOne(
+                        { _id: review.projectId as any },
+                        { $pull: { visibilityGrants: { grantedTo: member.userId } } } as any
+                    );
+                    
+                    revokedCount++;
+                }
+
+                if (pendingMembers.length > 0) {
+                    review.status = 'completed';
+                    review.completedAt = now;
+                }
+            }
+
+            await review.save();
+
+            await writeAuditLog({
+                actorId: '000000000000000000000000', // System actor
+                action: 'access_review.overdue',
+                targetType: 'AccessReview',
+                targetId: String(review._id),
+                organisationId: String(review.organisationId),
+                meta: { autoRevoked: revokedCount > 0 }
+            });
+
+            // TODO: Notify sysadmin (Notification model)
+        }
+
+        res.json({ status: 'complete', processed: overdueReviews.length, autoRevoked: revokedCount });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+cronRouter.get('/compliance-digest', async (req, res) => {
+    try {
+        const complianceService = (await import('../compliance/compliance.service')).default;
+        await complianceService.sendWeeklyComplianceDigest();
+        res.json({ status: 'complete', message: 'Compliance digest processed' });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 export default new Route('/api/v1/cron', cronRouter);

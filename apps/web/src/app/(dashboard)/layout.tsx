@@ -18,6 +18,7 @@ const NAV_ITEMS = [
     { href: '/projects', label: 'Projects', icon: '◻' },
     { href: '/team', label: 'Team', icon: '◎' },
     { href: '/directory', label: 'Directory', icon: '⊕' },
+    { href: '/compliance', label: 'Compliance', icon: '🛡' },
 ];
 
 const SETTINGS_ITEMS = [
@@ -27,6 +28,9 @@ const SETTINGS_ITEMS = [
     { href: '/settings/permissions/requests', label: 'Access Requests', adminOnly: true },
     { href: '/settings/organisation/structure', label: 'Teams', adminOnly: true },
     { href: '/settings/users', label: 'Users', adminOnly: true },
+    { href: '/settings/access-reviews', label: 'Access Reviews', adminOnly: true },
+    { href: '/settings/offboarding', label: 'Offboarding', adminOnly: true },
+    { href: '/settings/change-windows', label: 'Change Windows', adminOnly: true },
     { href: '/settings/audit-log', label: 'Audit Log', adminOnly: true },
 ];
 

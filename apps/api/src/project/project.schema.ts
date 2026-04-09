@@ -54,6 +54,13 @@ const projectSchema = new Schema<IProjectSchema>(
         visibilityGrants:      { type: [visibilityGrantSubSchema], default: [] },
         credentialCategories:  { type: [credentialCategorySubSchema], default: [] },
         links:                 { type: [linkSubSchema], default: [] },
+        criticality:           { type: String, enum: ['low', 'medium', 'high', 'mission_critical'], default: 'medium' },
+        runbooks: [{
+            name: { type: String, required: true },
+            content: { type: String, required: true }, // Markdown
+            addedBy: { type: Schema.Types.ObjectId as any, ref: 'User' },
+            addedAt: { type: Date, default: Date.now }
+        }],
         isDeleted:             { type: Boolean, default: false },
     },
     { timestamps: true },
