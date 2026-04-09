@@ -71,10 +71,12 @@ export default function OrganisationSettingsPage() {
     if (loading) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--vault-ink-muted)' }}>Loading…</div>;
 
     return (
-        <main style={{ padding: '28px 32px', maxWidth: 700 }}>
-            <div style={{ marginBottom: 28 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Organisation Settings</h1>
-                <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)', marginTop: 4 }}>Manage your organisation profile and role hierarchy.</p>
+        <div className="vault-page">
+            <div className="vault-page-header">
+                <div>
+                    <h1 className="vault-page-title">Organisation Settings</h1>
+                    <p className="vault-page-subtitle">Manage your organisation profile and role hierarchy.</p>
+                </div>
             </div>
 
             {/* Basic info card */}
@@ -178,6 +180,6 @@ export default function OrganisationSettingsPage() {
             >
                 {saving ? 'Saving…' : 'Save changes'}
             </button>
-        </main>
+        </div>
     );
 }

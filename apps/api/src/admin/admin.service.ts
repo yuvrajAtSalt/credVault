@@ -4,9 +4,11 @@ import { UserModel } from '../user/user.schema';
 import { CustomRoleModel, IPermissionSet } from './custom-role.schema';
 import userRepo from '../user/user.repo';
 import { writeAuditLog } from '../audit/audit.repo';
-import { VAULT_ROLES, BASE_PERMISSIONS, ALL_PERMISSIONS } from '../utils/constants';
-import type { VaultRole } from '../utils/constants';
+import { VAULT_ROLES, BASE_PERMISSIONS, ALL_PERMISSIONS, VaultRole } from '../utils/constants';
 import { resolvePermissionsSync, expireStalePermissions } from '../utils/permissions';
+import { enqueueEmail } from '../utils/email/queue';
+import { templates } from '../utils/email/templates';
+import orgRepo from '../organisation/organisation.repo';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function passwordStrengthCheck(pw: string) {
@@ -144,6 +146,22 @@ export const createUser = async (body: any, currentUser: any) => {
         targetId: String(newId),
         organisationId: String(currentUser.organisationId),
         meta: { email, role: customRoleId ? 'CUSTOM' : role },
+    });
+
+    const org = await orgRepo.findOrgById(String(currentUser.organisationId));
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+
+    await enqueueEmail({
+        to: email,
+        subject: `Welcome to ${org?.name || 'VaultStack'}!`,
+        ...(await templates.WelcomeNewUser({
+            name,
+            orgName: org?.name || 'VaultStack',
+            loginUrl: `${appUrl}/login`,
+            tempPassword: password,
+            role: (customRoleId ? 'CUSTOM' : role) as string,
+            email,
+        })),
     });
 
     return {
@@ -381,6 +399,23 @@ export const grantPermission = async (userId: string, body: any, currentUser: an
         organisationId: String(currentUser.organisationId),
         meta: { permission, value, reason, expiresAt },
     });
+
+    if (value) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+        await enqueueEmail({
+            to: user.email,
+            subject: `New Permission Granted: ${permission}`,
+            ...(await templates.PermissionGranted({
+                recipientName: user.name,
+                permission,
+                grantedBy: currentUser.name || 'An administrator',
+                reason,
+                expiresAt,
+                dashboardUrl: `${appUrl}/settings/profile`,
+                email: user.email,
+            })),
+        });
+    }
 
     return { statusCode: 200, message: `PERMISSION ${value ? 'GRANTED' : 'REVOKED'}`, data: null };
 };

@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
 import { API_BASE_URL } from '@/lib/constants';
 
@@ -87,7 +88,7 @@ function LoginForm() {
 
                 {/* Card */}
                 <div className="vault-card" style={{ padding: '32px' }}>
-                    <form onSubmit={handleSubmit} noValidate>
+                    <form onSubmit={handleSubmit} noValidate suppressHydrationWarning>
 
                         {/* Error */}
                         {error && (
@@ -116,6 +117,7 @@ function LoginForm() {
                                 Email address
                             </label>
                             <input
+                                suppressHydrationWarning
                                 id="login-email"
                                 type="email"
                                 className="vault-input"
@@ -141,6 +143,7 @@ function LoginForm() {
                             </label>
                             <div style={{ position: 'relative' }}>
                                 <input
+                                    suppressHydrationWarning
                                     id="login-password"
                                     type={showPassword ? 'text' : 'password'}
                                     className="vault-input"
@@ -153,6 +156,7 @@ function LoginForm() {
                                     style={{ paddingRight: '44px' }}
                                 />
                                 <button
+                                    suppressHydrationWarning
                                     type="button"
                                     onClick={() => setShowPassword((v) => !v)}
                                     style={{
@@ -185,10 +189,14 @@ function LoginForm() {
                                     )}
                                 </button>
                             </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                                <Link href="/forgot-password" style={{ fontSize: 12, color: 'var(--vault-primary)', textDecoration: 'none' }}>Forgot your password?</Link>
+                            </div>
                         </div>
 
                         {/* Submit */}
                         <button
+                            suppressHydrationWarning
                             id="login-submit"
                             type="submit"
                             className="vault-btn vault-btn--primary"

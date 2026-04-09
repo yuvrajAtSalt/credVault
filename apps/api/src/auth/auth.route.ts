@@ -126,4 +126,35 @@ authRouter.post('/change-password', body(changePwSchema), async (req: any, res, 
     } catch (e) { next(e); }
 });
 
+// ─── POST /api/v1/auth/forgot-password ──────────────────────────────────────────────
+const forgotPasswordSchema = z.object({ email: z.string().email() });
+authRouter.post('/forgot-password', body(forgotPasswordSchema), async (req: any, res, next) => {
+    try {
+        const result = await authService.forgotPassword(req.body.email);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
+// ─── GET /api/v1/auth/reset-password/validate ──────────────────────────────────────
+authRouter.get('/reset-password/validate', async (req: any, res, next) => {
+    try {
+        const token = String(req.query.token || '');
+        if (!token) throw { statusCode: 400, message: 'Token required' };
+        const result = await authService.validateResetToken(token);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
+// ─── POST /api/v1/auth/reset-password ────────────────────────────────────────────────
+const resetPasswordSchema = z.object({
+    token:       z.string().min(1),
+    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+});
+authRouter.post('/reset-password', body(resetPasswordSchema), async (req: any, res, next) => {
+    try {
+        const result = await authService.resetPassword(req.body.token, req.body.newPassword);
+        res.status(result.statusCode).send(new ResponseHandler(result));
+    } catch (e) { next(e); }
+});
+
 export default new Route('/api/v1/auth', authRouter);

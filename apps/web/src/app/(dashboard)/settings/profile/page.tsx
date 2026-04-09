@@ -4,14 +4,22 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL, ROLE_LABELS, VaultRole } from '@/lib/constants';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useToast } from '@/components/ui/Toast';
+import { Toggle } from '@/components/ui/Toggle';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function ProfileSettingsPage() {
     const { user, token, setAuth } = useAuth();
     const { toast } = useToast();
+    const perms = usePermissions();
+    const isAdmin = ['SYSADMIN', 'MANAGER'].includes(user?.role || '');
 
     const [name, setName]             = useState('');
     const [jobTitle, setJobTitle]     = useState('');
     const [department, setDepartment] = useState('');
+    const [notifPrefs, setNotifPrefs] = useState({
+        projectInvitations: true, projectRemovals: true, credentialExpiry: true,
+        permissionRequests: true, roleChanges: true, reportingChanges: true
+    });
     const [saving, setSaving]         = useState(false);
 
     // Password change
@@ -34,6 +42,7 @@ export default function ProfileSettingsPage() {
                     setName(u.name ?? '');
                     setJobTitle(u.jobTitle ?? '');
                     setDepartment(u.department ?? '');
+                    if (u.notificationPreferences) setNotifPrefs(u.notificationPreferences);
                 }
             });
     }, [user, token]);
@@ -42,11 +51,17 @@ export default function ProfileSettingsPage() {
         if (!user) return;
         setSaving(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/v1/members/${user._id}`, {
+            const bodyPayload: any = { name, notificationPreferences: notifPrefs };
+            if (isAdmin) {
+                bodyPayload.jobTitle = jobTitle;
+                bodyPayload.department = department;
+            }
+
+            const res = await fetch(`${API_BASE_URL}/api/v1/users/${user._id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 credentials: 'include',
-                body: JSON.stringify({ name, jobTitle, department }),
+                body: JSON.stringify(bodyPayload),
             });
             const json = await res.json();
             if (res.ok) {
@@ -98,10 +113,12 @@ export default function ProfileSettingsPage() {
     }
 
     return (
-        <main style={{ padding: '28px 32px', maxWidth: 680 }}>
-            <div style={{ marginBottom: 28 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Profile Settings</h1>
-                <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)', marginTop: 4 }}>Manage your personal information and password.</p>
+        <div className="vault-page">
+            <div className="vault-page-header">
+                <div>
+                    <h1 className="vault-page-title">Profile Settings</h1>
+                    <p className="vault-page-subtitle">Manage your personal information and password.</p>
+                </div>
             </div>
 
             {/* Profile card */}
@@ -177,6 +194,8 @@ export default function ProfileSettingsPage() {
                                 value={jobTitle}
                                 onChange={e => setJobTitle(e.target.value)}
                                 placeholder="e.g. Senior Engineer"
+                                disabled={!isAdmin}
+                                style={!isAdmin ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
                             />
                         </div>
                         <div>
@@ -189,8 +208,45 @@ export default function ProfileSettingsPage() {
                                 value={department}
                                 onChange={e => setDepartment(e.target.value)}
                                 placeholder="e.g. Engineering"
+                                disabled={!isAdmin}
+                                style={!isAdmin ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
                             />
                         </div>
+                    </div>
+                </div>
+
+                {!isAdmin && (
+                    <p style={{ fontSize: 11, color: 'var(--vault-ink-subtle)', marginTop: 12 }}>Job title and Department can only be edited by admins.</p>
+                )}
+
+                {/* Notification Preferences */}
+                <div style={{ marginTop: 32, borderTop: '1px solid var(--vault-border)', paddingTop: 24 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--vault-ink)', marginBottom: 16 }}>Notification Preferences</h3>
+                    <div style={{ display: 'grid', gap: 16 }}>
+                        <Toggle 
+                            checked={notifPrefs.projectInvitations} 
+                            onChange={(v) => setNotifPrefs(p => ({ ...p, projectInvitations: v }))} 
+                            label="Project invitations" 
+                            description="When you are added to a project." 
+                        />
+                        <Toggle 
+                            checked={notifPrefs.credentialExpiry} 
+                            onChange={(v) => setNotifPrefs(p => ({ ...p, credentialExpiry: v }))} 
+                            label="Credential expiry" 
+                            description="When credentials you have access to are expiring soon." 
+                        />
+                        <Toggle 
+                            checked={notifPrefs.permissionRequests} 
+                            onChange={(v) => setNotifPrefs(p => ({ ...p, permissionRequests: v }))} 
+                            label="Permission requests" 
+                            description="Status updates on your special access requests." 
+                        />
+                        <Toggle 
+                            checked={notifPrefs.roleChanges} 
+                            onChange={(v) => setNotifPrefs(p => ({ ...p, roleChanges: v }))} 
+                            label="Role and Team changes" 
+                            description="When your role or team assignments are changed." 
+                        />
                     </div>
                 </div>
 
@@ -266,6 +322,6 @@ export default function ProfileSettingsPage() {
                     </button>
                 </div>
             </div>
-        </main>
+        </div>
     );
 }

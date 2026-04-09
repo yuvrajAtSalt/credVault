@@ -41,7 +41,26 @@ userRouter.get('/:id', async (req, res, next) => {
 // PATCH /api/v1/user/:id — update user
 userRouter.patch('/:id', ...updateValidations, async (req: any, res, next) => {
     try {
-        const result = await userService.updateUser(req.params.id, req.body);
+        const updaterRole = req.currentUser?.role;
+        const updaterId   = String(req.currentUser?._id);
+        const targetId    = req.params.id;
+        
+        // Non-admins can only update themselves
+        if (!['SYSADMIN', 'MANAGER'].includes(updaterRole) && updaterId !== targetId) {
+            throw { statusCode: 403, message: 'FORBIDDEN — Cannot update other users' };
+        }
+
+        const updates = { ...req.body };
+
+        // Strip ADMIN_ONLY_FIELDS if updater is not an admin
+        if (!['SYSADMIN', 'MANAGER'].includes(updaterRole)) {
+            const ADMIN_ONLY_FIELDS = ['role', 'customRoleId', 'isOrgRoot', 'department', 'jobTitle', 'reportingTo', 'teamId', 'isActive', 'specialPermissions'];
+            ADMIN_ONLY_FIELDS.forEach(field => {
+                delete updates[field];
+            });
+        }
+
+        const result = await userService.updateUser(targetId, updates);
         res.status(result.statusCode).send(new ResponseHandler(result));
     } catch (e) {
         next(e);

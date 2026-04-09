@@ -48,13 +48,15 @@ function MinusIcon() {
 
 export default function PermissionsPage() {
     return (
-        <main style={{ padding: '28px 32px', maxWidth: 1200 }}>
+        <div className="vault-page">
             {/* Header */}
-            <div style={{ marginBottom: 28 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Permissions Matrix</h1>
-                <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)', marginTop: 4 }}>
-                    Read-only view of role-based access control across the organisation.
-                </p>
+            <div className="vault-page-header">
+                <div>
+                    <h1 className="vault-page-title">Permissions Matrix</h1>
+                    <p className="vault-page-subtitle">
+                        Read-only view of role-based access control across the organisation.
+                    </p>
+                </div>
             </div>
 
             {/* Matrix Table */}
@@ -156,6 +158,6 @@ export default function PermissionsPage() {
                     );
                 })}
             </div>
-        </main>
+        </div>
     );
 }

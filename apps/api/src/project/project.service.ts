@@ -7,6 +7,9 @@ import { EXECUTIVE_ROLES, ADMIN_ROLES } from '../utils/constants';
 import { getRoleTier, isInManagersTeam, canManage } from '../utils/hierarchy';
 import { resolvePermissionsSync, EffectivePermissions } from '../utils/permissions';
 import { ProjectModel } from './project.schema';
+import { enqueueEmail } from '../utils/email/queue';
+import { templates } from '../utils/email/templates';
+import orgRepo from '../organisation/organisation.repo';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -156,6 +159,23 @@ export const addMember = async (projectId: string, body: { userId: string }, cur
         meta: { projectId, projectName: (project as any).name },
     });
 
+    const org = await orgRepo.findOrgById(String(currentUser.organisationId));
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+
+    await enqueueEmail({
+        to: targetUser.email,
+        subject: `You've been added to ${project.name}`,
+        ...(await templates.ProjectInvite({
+            recipientName: targetUser.name,
+            actorName: currentUser.name || 'A team member',
+            actorRole: currentUser.role,
+            projectName: project.name,
+            projectUrl: `${appUrl}/projects/${project._id}`,
+            orgName: org?.name || 'VaultStack',
+            email: targetUser.email,
+        })),
+    });
+
     return { statusCode: 200, message: 'MEMBER ADDED', data: updated };
 };
 
@@ -201,6 +221,21 @@ export const removeMember = async (projectId: string, userId: string, currentUse
         targetId: userId,
         organisationId: String(currentUser.organisationId),
         meta: { projectId, retainedGrantsCount, residualRevoked: revokeResidual },
+    });
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+
+    await enqueueEmail({
+        to: targetUser.email,
+        subject: `Access revoked for ${project.name}`,
+        ...(await templates.ProjectRemoved({
+            recipientName: targetUser.name,
+            actorName: currentUser.name || 'A team member',
+            projectName: project.name,
+            dashboardUrl: `${appUrl}/dashboard`,
+            hadResidualAccess: retainedGrantsCount > 0,
+            email: targetUser.email,
+        })),
     });
 
     return { 

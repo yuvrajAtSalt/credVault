@@ -28,6 +28,7 @@ const credentialSchema = new Schema<ICredentialSchema>(
         addedByRole:          { type: String, enum: VAULT_ROLES, required: true },
         lastEditedBy:         { type: Schema.Types.ObjectId as any, ref: 'User' },
         lastEditedAt:         { type: Date },
+        lastExpiryNoticeSentAt:{ type: Date },
         isDeleted:            { type: Boolean, default: false },
     },
     { timestamps: true },
@@ -38,5 +39,6 @@ credentialSchema.index({ organisationId: 1 });
 credentialSchema.index({ category: 1 });
 credentialSchema.index({ addedBy: 1 });
 credentialSchema.index({ isDeleted: 1 });
+credentialSchema.index({ label: 'text' }); // Values are encrypted, can't search them
 
 export const CredentialModel = model<ICredentialSchema>('Credential', credentialSchema);

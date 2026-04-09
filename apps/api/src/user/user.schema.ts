@@ -36,6 +36,18 @@ export interface IUserDocument {
     updatedBy: any;
     createdAt: Date;
     updatedAt: Date;
+    // Forgot-password flow
+    passwordResetToken?: string | null;
+    passwordResetExpires?: Date | null;
+    // Notification preferences
+    notificationPreferences?: {
+        projectInvitations: boolean;
+        projectRemovals: boolean;
+        credentialExpiry: boolean;
+        permissionRequests: boolean;
+        roleChanges: boolean;
+        reportingChanges: boolean;
+    };
     comparePassword(plain: string): Promise<boolean>;
     initials: string;
 }
@@ -67,11 +79,33 @@ const userSchema = new Schema<IUserDocument>(
         teamId:              { type: Schema.Types.ObjectId as any, ref: 'Team', default: null },
         isOrgRoot:           { type: Boolean, default: false },
         isActive:            { type: Boolean, default: true },
-        invitedBy:           { type: Schema.Types.ObjectId, ref: 'User', default: null },
-        lastLoginAt:         { type: Date },
-        isDeleted:           { type: Boolean, default: false },
-        createdBy:           { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        updatedBy:           { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        invitedBy:             { type: Schema.Types.ObjectId, ref: 'User', default: null },
+        lastLoginAt:           { type: Date },
+        isDeleted:             { type: Boolean, default: false },
+        createdBy:             { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        updatedBy:             { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        // Forgot-password
+        passwordResetToken:    { type: String, default: null },
+        passwordResetExpires:  { type: Date, default: null },
+        // Notification preferences
+        notificationPreferences: {
+            type: {
+                projectInvitations: { type: Boolean, default: true },
+                projectRemovals:    { type: Boolean, default: true },
+                credentialExpiry:   { type: Boolean, default: true },
+                permissionRequests: { type: Boolean, default: true },
+                roleChanges:        { type: Boolean, default: true },
+                reportingChanges:   { type: Boolean, default: true },
+            },
+            default: () => ({
+                projectInvitations: true,
+                projectRemovals:    true,
+                credentialExpiry:   true,
+                permissionRequests: true,
+                roleChanges:        true,
+                reportingChanges:   true,
+            }),
+        },
     },
     { timestamps: true },
 );
@@ -102,5 +136,9 @@ userSchema.virtual('initials').get(function () {
         ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
         : parts[0].slice(0, 2).toUpperCase();
 });
+
+// ─── Indexes ──────────────────────────────────────────────────────────────────
+userSchema.index({ email: 1 });
+userSchema.index({ name: 'text', email: 'text', jobTitle: 'text' });
 
 export const UserModel = model<IUserDocument>('User', userSchema);

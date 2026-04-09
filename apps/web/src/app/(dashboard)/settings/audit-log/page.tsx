@@ -89,14 +89,16 @@ export default function AuditLogPage() {
     useEffect(() => { fetchLogs(1); }, [fetchLogs]);
 
     return (
-        <main style={{ padding: '28px 32px', maxWidth: 1300 }}>
+        <div className="vault-page">
             {/* Header */}
-            <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Audit Log</h1>
-                <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)', marginTop: 4 }}>
-                    Complete immutable record of all actions performed in your organisation.
-                    {total > 0 && <strong style={{ color: 'var(--vault-ink)' }}> {total} total events.</strong>}
-                </p>
+            <div className="vault-page-header">
+                <div>
+                    <h1 className="vault-page-title">Audit Log</h1>
+                    <p className="vault-page-subtitle">
+                        Complete immutable record of all actions performed in your organisation.
+                        {total > 0 && <strong style={{ color: 'var(--vault-ink)' }}> {total} total events.</strong>}
+                    </p>
+                </div>
             </div>
 
             {/* Filter Bar */}
@@ -278,6 +280,6 @@ export default function AuditLogPage() {
                     </button>
                 </div>
             )}
-        </main>
+        </div>
     );
 }

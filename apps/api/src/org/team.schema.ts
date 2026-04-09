@@ -34,5 +34,6 @@ teamSchema.index({ organisationId: 1 });
 teamSchema.index({ leadId: 1 });
 teamSchema.index({ parentTeamId: 1 });
 teamSchema.index({ organisationId: 1, slug: 1 }, { unique: true });
+teamSchema.index({ name: 'text', description: 'text' });
 
 export const TeamModel = model<ITeamSchema>('Team', teamSchema);

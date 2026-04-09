@@ -2,6 +2,7 @@ import { compare, hash } from 'bcrypt';
 import { sign, verify } from 'jsonwebtoken';
 import { SignOptions } from 'jsonwebtoken';
 import { Types } from 'mongoose';
+import { randomBytes, createHash } from 'crypto';
 import userRepo from '../user/user.repo';
 import orgRepo from '../organisation/organisation.repo';
 import { writeAuditLog } from '../audit/audit.repo';
@@ -9,6 +10,8 @@ import { authResponses } from './auth.responses';
 import { ILoginPayload } from './auth.types';
 import { BlacklistedTokenModel } from './blacklisted-token.schema';
 import { VAULT_ROLES, VaultRole, PRIVLEGED_ROLES } from '../utils/constants';
+import { enqueueEmail } from '../utils/email/queue';
+import { templates } from '../utils/email/templates';
 
 const getSecret = () => {
     const s = process.env.VAULT_JWT_SECRET;
@@ -222,4 +225,76 @@ export const mePermissions = async (currentUser: any) => {
     return { statusCode: 200, message: 'PERMISSIONS FETCHED', data: { effectivePermissions: effective, forcePasswordChange: (user as any).forcePasswordChange } };
 };
 
-export default { register, login, me, mePermissions, logout, refreshToken, invite, changePassword };
+// ─── forgotPassword ───────────────────────────────────────────────────────────
+export const forgotPassword = async (email: string) => {
+    // Always return same message to prevent email enumeration
+    const GENERIC = { statusCode: 200, message: 'If this email exists, a reset link has been sent.' };
+    const user = await userRepo.findUserByEmail(email);
+    if (!user) return GENERIC;
+
+    const rawToken = randomBytes(32).toString('hex');
+    const hashedToken = createHash('sha256').update(rawToken).digest('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await userRepo.updateUser(String(user._id), {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: expires,
+    } as any);
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+    const resetUrl = `${appUrl}/reset-password?token=${rawToken}`;
+    
+    await enqueueEmail({
+        to: email,
+        subject: 'Reset your VaultStack password',
+        ...(await templates.PasswordReset({
+            name: user.name,
+            resetUrl,
+            expiresInMinutes: 60,
+            email: user.email,
+        })),
+    });
+
+    return GENERIC;
+};
+
+// ─── validateResetToken ───────────────────────────────────────────────────────
+export const validateResetToken = async (rawToken: string) => {
+    const { UserModel } = await import('../user/user.schema');
+    const hashedToken = createHash('sha256').update(rawToken).digest('hex');
+    const user = await UserModel.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: new Date() },
+    });
+    if (!user) return { statusCode: 200, message: 'TOKEN_VALIDATED', data: { valid: false, reason: 'expired' } };
+    return { statusCode: 200, message: 'TOKEN_VALIDATED', data: { valid: true } };
+};
+
+// ─── resetPassword ────────────────────────────────────────────────────────────
+export const resetPassword = async (rawToken: string, newPassword: string) => {
+    const { UserModel } = await import('../user/user.schema');
+    const hashedToken = createHash('sha256').update(rawToken).digest('hex');
+    const user = await UserModel.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: new Date() },
+    });
+    if (!user) throw { statusCode: 400, message: 'Reset link is invalid or has expired.', code: 'RESET_TOKEN_INVALID' };
+    if (newPassword.length < 8) throw { statusCode: 400, message: 'Password must be at least 8 characters.' };
+
+    user.password = newPassword; // pre-save hook will hash it
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    await writeAuditLog({
+        actorId: String(user._id),
+        action: 'account.password_reset_self',
+        targetType: 'User',
+        targetId: String(user._id),
+        organisationId: String(user.organisationId),
+    });
+
+    return { statusCode: 200, message: 'Password updated. Please log in.' };
+};
+
+export default { register, login, me, mePermissions, logout, refreshToken, invite, changePassword, forgotPassword, validateResetToken, resetPassword };

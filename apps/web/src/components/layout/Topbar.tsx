@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { Avatar } from '@/components/ui/Avatar';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { GlobalSearchBar } from '@/components/search/GlobalSearchBar';
 
 interface TopbarProps {
     onOpenSidebar: () => void;
@@ -29,18 +31,16 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
                 ☰
             </button>
 
-            {/* Spacer to push avatar to right */}
-            <div style={{ flex: 1 }} />
+            {/* Middle: Search Bar */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '0 20px' }}>
+                <div style={{ width: '100%', maxWidth: 400 }}>
+                    <GlobalSearchBar />
+                </div>
+            </div>
 
             {/* Right side actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <button
-                    suppressHydrationWarning
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--vault-ink-muted)' }}
-                    aria-label="Notifications"
-                >
-                    <span role="img" aria-hidden="true">🔔</span>
-                </button>
+                <NotificationBell />
 
                 <div style={{ position: 'relative' }}>
                     <button

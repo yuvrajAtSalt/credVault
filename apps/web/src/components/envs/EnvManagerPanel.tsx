@@ -192,7 +192,7 @@ function PasteEnvModal({ envId, projectId, onDone, onClose }: {
         });
         setSaving(false);
         if (error) { toast.error(error.message || 'Failed'); return; }
-        const r = data?.data?.data;
+        const r = data?.data;
         toast.success(`${r?.inserted ?? 0} inserted, ${r?.updated ?? 0} updated, ${r?.skipped ?? 0} skipped`);
         onDone();
     };
@@ -263,7 +263,7 @@ function CompareModal({ projectId, environments, onClose }: {
         if (!envA || !envB) return;
         setLoading(true);
         const { data } = await api.get<any>(`/api/v1/projects/${projectId}/envs/compare?envA=${envA}&envB=${envB}`);
-        setResult(data?.data?.data ?? null);
+        setResult(data?.data ?? null);
         setLoading(false);
     };
 
@@ -354,7 +354,7 @@ function AddEnvironmentModal({ projectId, environments, onDone, onClose }: {
         setSaving(false);
         if (error) { toast.error(error.message || 'Failed'); return; }
         toast.success(`Environment "${name}" created!`);
-        onDone(data?.data?.data?._id ?? '');
+        onDone(data?.data?._id ?? '');
     };
 
     return (
@@ -441,7 +441,7 @@ function VariableRow({ v, projectId, envId, onDelete, onEdit, baseKeys }: {
         setRevealing(false);
         if (error) { toast.error('Cannot reveal: ' + error.message); return; }
         
-        setRevealed(data?.data?.data?.value ?? '');
+        setRevealed(data?.data?.value ?? '');
         setPromptingReason(false);
         setReason('');
     };
@@ -454,7 +454,7 @@ function VariableRow({ v, projectId, envId, onDelete, onEdit, baseKeys }: {
 
             const { data, error } = await api.post<any>(`/api/v1/projects/${projectId}/envs/${envId}/variables/${v._id}/reveal`, { reason: reqReason });
             if (error) { toast.error('Cannot copy'); return; }
-            val = data?.data?.data?.value ?? '';
+            val = data?.data?.value ?? '';
             setRevealed(val);
         }
         await navigator.clipboard.writeText(val ?? '');
@@ -588,7 +588,7 @@ export function EnvVariableEditor({ projectId, environment, baseEnvKeys, onEnvsC
     const fetchVars = useCallback(async () => {
         setLoading(true);
         const { data } = await api.get<any>(`/api/v1/projects/${projectId}/envs/${environment._id}/variables`);
-        const d = data?.data?.data;
+        const d = data?.data;
         setGroups(d?.groups ?? []);
         setHidden(d?.hiddenCount ?? 0);
         setLoading(false);
@@ -812,7 +812,7 @@ export function EnvManagerPanel({ projectId }: { projectId: string }) {
 
     const fetchEnvs = useCallback(async () => {
         const { data } = await api.get<any>(`/api/v1/projects/${projectId}/envs`);
-        const list: Environment[] = data?.data?.data ?? [];
+        const list: Environment[] = data?.data ?? [];
         setEnvironments(list);
         if (list.length > 0 && !activeEnvId) setActiveEnvId(list[0]._id);
         setLoading(false);
@@ -839,7 +839,7 @@ export function EnvManagerPanel({ projectId }: { projectId: string }) {
     useEffect(() => {
         if (!baseEnv || baseEnv._id === activeEnvId) { setBaseKeys([]); return; }
         api.get<any>(`/api/v1/projects/${projectId}/envs/${baseEnv._id}/variables`).then(({ data }) => {
-            const groups: EnvGroup[] = data?.data?.data?.groups ?? [];
+            const groups: EnvGroup[] = data?.data?.groups ?? [];
             setBaseKeys(groups.flatMap(g => g.variables.map(v => v.key)));
         });
     }, [baseEnv, activeEnvId, projectId]);

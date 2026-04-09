@@ -51,5 +51,6 @@ const projectSchema = new Schema<IProjectSchema>(
 projectSchema.index({ organisationId: 1 });
 projectSchema.index({ 'members.userId': 1 });
 projectSchema.index({ status: 1 });
+projectSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
 export const ProjectModel = model<IProjectSchema>('Project', projectSchema);

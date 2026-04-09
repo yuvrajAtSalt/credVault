@@ -10,6 +10,8 @@ import { Topbar } from '@/components/layout/Topbar';
 import { ToastProvider } from '@/components/ui/Toast';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ROLE_LABELS, VaultRole, ROLE_COLORS } from '@/lib/constants';
+import { CommandPalette } from '@/components/command/CommandPalette';
+import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
 
 const NAV_ITEMS = [
     { href: '/dashboard', label: 'Dashboard', icon: '⊞' },
@@ -20,12 +22,11 @@ const NAV_ITEMS = [
 
 const SETTINGS_ITEMS = [
     { href: '/settings/profile',                   label: 'Profile',              adminOnly: false },
-    { href: '/settings/organisation',              label: 'Organisation',         adminOnly: true  },
-    { href: '/settings/organisation/structure',    label: 'Org Structure',        adminOnly: true  },
-    { href: '/settings/permissions',               label: 'Permissions',          adminOnly: true  },
-    { href: '/settings/permissions/requests',      label: 'Permission Requests',  adminOnly: true  },
-    { href: '/settings/roles',                     label: 'Roles',                adminOnly: true  },
-    { href: '/settings/users',                     label: 'User Management',      adminOnly: true  },
+    { href: '/settings/organisation/general',      label: 'General',              adminOnly: true  },
+    { href: '/settings/roles',                     label: 'Roles & Permissions',  adminOnly: true  },
+    { href: '/settings/permissions/requests',      label: 'Access Requests',      adminOnly: true  },
+    { href: '/settings/organisation/structure',    label: 'Teams',                adminOnly: true  },
+    { href: '/settings/users',                     label: 'Users',                adminOnly: true  },
     { href: '/settings/audit-log',                 label: 'Audit Log',            adminOnly: true  },
 ];
 
@@ -60,6 +61,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const isAdmin   = perms.isGod() || perms.canManageRoles();
 
     const isSettingsActive = pathname.startsWith('/settings');
+
+    useRealtimeEvents();
 
     return (
         <ToastProvider>
@@ -200,6 +203,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 {/* Main content */}
                 <div className="vault-shell">
                     <Topbar onOpenSidebar={() => setSidebarOpen(true)} />
+                    <CommandPalette />
                     <ErrorBoundary>
                         {children}
                     </ErrorBoundary>

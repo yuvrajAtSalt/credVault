@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { VAULT_ROLES, ROLE_LABELS } from '@/lib/constants';
 
-const fetcher = (url: string) => api.get<any>(url).then((r) => r.data);
+const fetcher = (url: string) => api.get<any>(url).then((r) => r.data?.data || r.data);
 
 type Step = 1 | 2 | 3;
 

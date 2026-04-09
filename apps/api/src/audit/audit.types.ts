@@ -58,6 +58,7 @@ export const AUDIT_ACTIONS = [
     'bulk.team_assign',
     'bulk.role_change',
     'bulk.deactivate',
+    'account.password_reset_self',
 ] as const;
 
 export const auditLogSchemaType = z.object({

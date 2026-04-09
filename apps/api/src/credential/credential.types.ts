@@ -25,6 +25,7 @@ export const credentialSchemaType = z.object({
     addedByRole: z.enum([...VAULT_ROLES] as [string, ...string[]]),
     lastEditedBy: z.string().optional(),
     lastEditedAt: z.date().optional(),
+    lastExpiryNoticeSentAt: z.date().optional(),
     isDeleted: z.boolean().default(false),
 });
 

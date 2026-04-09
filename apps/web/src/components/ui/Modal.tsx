@@ -19,12 +19,22 @@ const widthMap: Record<ModalWidth, number> = { sm: 400, md: 520, lg: 680 };
 export function Modal({ isOpen, onClose, title, children, footer, width = 'md' }: ModalProps) {
     const dialogRef = useRef<HTMLDivElement>(null);
 
-    // Close on Escape
+    // Close on Escape & Body scroll lock
     useEffect(() => {
         if (!isOpen) return;
+        
+        // Lock body scroll
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        
         const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
         window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
+        
+        return () => {
+            window.removeEventListener('keydown', handler);
+            // Restore body scroll
+            document.body.style.overflow = originalOverflow;
+        };
     }, [isOpen, onClose]);
 
     if (!isOpen) return null;

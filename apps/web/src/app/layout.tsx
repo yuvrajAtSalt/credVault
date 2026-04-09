@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   description: "Secure project credentials manager for your team.",
   applicationName: "Cred Vault",
   robots: { index: false, follow: false },  // internal tool — no indexing
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({

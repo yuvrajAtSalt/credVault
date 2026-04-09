@@ -51,5 +51,6 @@ envVariableSchema.index({ key: 1 });
 envVariableSchema.index({ isDeleted: 1 });
 // One value per key per environment
 envVariableSchema.index({ environmentId: 1, key: 1 }, { unique: true, partialFilterExpression: { isDeleted: false } });
+envVariableSchema.index({ key: 'text' });
 
 export const EnvVariableModel = model<IEnvVariableSchema>('EnvVariable', envVariableSchema);
