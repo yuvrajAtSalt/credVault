@@ -61,12 +61,12 @@ export default function DirectoryPage() {
 
     const fetchOrgChart = useCallback(async () => {
         const { data } = await api.get<any>('/api/v1/org/chart');
-        setOrgTree((data as any)?.data?.data ?? { roots: [], unassigned: [] });
+        setOrgTree((data as any)?.data ?? { roots: [], unassigned: [] });
     }, []);
 
     const fetchTeams = useCallback(async () => {
         const { data } = await api.get<any>('/api/v1/org/teams');
-        setTeams(data?.data?.data ?? []);
+        setTeams(data?.data ?? []);
     }, []);
 
     useEffect(() => { fetchMembers(); fetchTeams(); }, [fetchMembers, fetchTeams]);

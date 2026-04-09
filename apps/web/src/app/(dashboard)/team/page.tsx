@@ -68,7 +68,7 @@ export default function TeamPage() {
 
     const fetchTeams = useCallback(async () => {
         const { data } = await api.get<any>('/api/v1/org/teams');
-        setTeams(data?.data?.data ?? []);
+        setTeams(data?.data ?? []);
     }, []);
 
     useEffect(() => { fetchMembers(); fetchTeams(); }, [fetchMembers, fetchTeams]);
@@ -99,7 +99,7 @@ export default function TeamPage() {
             {/* Page header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
                 <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Team</h1>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Employees</h1>
                     <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)', marginTop: 4, marginBottom: 0 }}>
                         {members.length} member{members.length !== 1 ? 's' : ''} in your organisation
                     </p>

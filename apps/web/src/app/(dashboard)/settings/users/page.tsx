@@ -32,9 +32,9 @@ export default function UsersPage() {
     }).toString();
 
     const { data, isLoading } = useSWR(`/api/v1/admin/users?${query}`, fetcher);
-    const users = data?.users ?? [];
-    const total = data?.total ?? 0;
-    const pages = data?.pages ?? 1;
+    const users = data?.data?.users ?? [];
+    const total = data?.data?.total ?? 0;
+    const pages = data?.data?.pages ?? 1;
 
     const refresh = () => mutate(`/api/v1/admin/users?${query}`);
 

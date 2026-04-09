@@ -15,19 +15,19 @@ import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
 
 const NAV_ITEMS = [
     { href: '/dashboard', label: 'Dashboard', icon: '⊞' },
-    { href: '/projects',  label: 'Projects',  icon: '◻' },
-    { href: '/team',      label: 'Team',       icon: '◎' },
-    { href: '/directory', label: 'Directory',  icon: '⊕' },
+    { href: '/projects', label: 'Projects', icon: '◻' },
+    { href: '/team', label: 'Team', icon: '◎' },
+    { href: '/directory', label: 'Directory', icon: '⊕' },
 ];
 
 const SETTINGS_ITEMS = [
-    { href: '/settings/profile',                   label: 'Profile',              adminOnly: false },
-    { href: '/settings/organisation/general',      label: 'General',              adminOnly: true  },
-    { href: '/settings/roles',                     label: 'Roles & Permissions',  adminOnly: true  },
-    { href: '/settings/permissions/requests',      label: 'Access Requests',      adminOnly: true  },
-    { href: '/settings/organisation/structure',    label: 'Teams',                adminOnly: true  },
-    { href: '/settings/users',                     label: 'Users',                adminOnly: true  },
-    { href: '/settings/audit-log',                 label: 'Audit Log',            adminOnly: true  },
+    { href: '/settings/profile', label: 'Profile', adminOnly: false },
+    { href: '/settings/organisation/general', label: 'General', adminOnly: true },
+    { href: '/settings/roles', label: 'Roles & Permissions', adminOnly: true },
+    { href: '/settings/permissions/requests', label: 'Access Requests', adminOnly: true },
+    { href: '/settings/organisation/structure', label: 'Teams', adminOnly: true },
+    { href: '/settings/users', label: 'Users', adminOnly: true },
+    { href: '/settings/audit-log', label: 'Audit Log', adminOnly: true },
 ];
 
 function UserAvatar({ name }: { name?: string }) {
@@ -57,8 +57,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const [settingsOpen, setSettingsOpen] = useState(() => pathname.startsWith('/settings'));
 
     const roleLabel = user?.role ? ROLE_LABELS[user.role as VaultRole] ?? user.role : '';
-    const roleCss   = user?.role ? ROLE_COLORS[user.role as VaultRole] ?? 'vault-role--qa' : '';
-    const isAdmin   = perms.isGod() || perms.canManageRoles();
+    const roleCss = user?.role ? ROLE_COLORS[user.role as VaultRole] ?? 'vault-role--qa' : '';
+    const isAdmin = perms.isGod() || perms.canManageRoles();
 
     const isSettingsActive = pathname.startsWith('/settings');
 
@@ -81,8 +81,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     {/* Logo */}
                     <a href="/dashboard" className="vault-sidebar__logo">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="11" width="18" height="11" rx="2" stroke="white" strokeWidth="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                            <rect x="3" y="11" width="18" height="11" rx="2" stroke="white" strokeWidth="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                         <span className="vault-sidebar__logo-text">Cred Vault</span>
                     </a>

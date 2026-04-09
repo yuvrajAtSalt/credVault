@@ -80,7 +80,7 @@ export const listUsers = async (
 };
 
 export const createUser = async (body: any, currentUser: any) => {
-    const { name, email, password, role, customRoleId, jobTitle, department,
+    const { name, email, secondaryEmails, password, role, customRoleId, jobTitle, department,
             teamId, reportingTo, isOrgRoot, forcePasswordChange } = body;
 
     // Validate exactly one of role / customRoleId
@@ -117,6 +117,7 @@ export const createUser = async (body: any, currentUser: any) => {
         organisationId: currentUser.organisationId,
         name,
         email,
+        secondaryEmails: secondaryEmails || [],
         password,          // hashed by pre-save hook
         role: customRoleId ? 'CUSTOM' : role,
         customRoleId: customRoleId ? new Types.ObjectId(customRoleId) : undefined,
@@ -180,7 +181,7 @@ export const updateUser = async (userId: string, body: any, currentUser: any) =>
     const user = await UserModel.findOne({ _id: userId, organisationId: currentUser.organisationId }).lean();
     if (!user) throw { statusCode: 404, message: 'USER NOT FOUND' };
 
-    const allowed = ['name', 'email', 'role', 'customRoleId', 'jobTitle', 'department',
+    const allowed = ['name', 'email', 'secondaryEmails', 'role', 'customRoleId', 'jobTitle', 'department',
                      'teamId', 'reportingTo', 'isActive', 'forcePasswordChange', 'avatarUrl'];
     const patch: any = {};
     for (const key of allowed) {

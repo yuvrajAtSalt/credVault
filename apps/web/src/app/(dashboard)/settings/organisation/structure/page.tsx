@@ -45,9 +45,9 @@ export default function OrgStructurePage() {
             api.get<any>('/api/v1/org/chart'),
             api.get<any>('/api/v1/members'),
         ]);
-        setTeams(teamRes.data?.data?.data ?? []);
-        setRoots(chartRes.data?.data?.data?.roots ?? []);
-        setUnassigned(chartRes.data?.data?.data?.unassigned ?? []);
+        setTeams(teamRes.data?.data ?? []);
+        setRoots(chartRes.data?.data?.roots ?? []);
+        setUnassigned(chartRes.data?.data?.unassigned ?? []);
         setAllMembers(memberRes.data?.data ?? []);
         setLoading(false);
     }, []);

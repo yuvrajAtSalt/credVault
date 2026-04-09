@@ -58,7 +58,7 @@ export function MemberEditorSlideOver({ member, teams, allMembers, onClose, onSa
     const loadChain = async () => {
         if (!member) return;
         const { data } = await api.get<any>(`/api/v1/org/members/${member._id}/chain`);
-        setChain(data?.data?.data?.chain ?? []);
+        setChain(data?.data?.chain ?? []);
         setShowChain(true);
     };
 

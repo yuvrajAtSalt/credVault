@@ -29,6 +29,7 @@ export function EditUserModal({ user, onClose }: Props) {
     const [form, setForm] = useState({
         name:       user.name       || '',
         email:      user.email      || '',
+        secondaryEmails: user.secondaryEmails || [],
         jobTitle:   user.jobTitle   || '',
         department: user.department || '',
         role:       user.role       || 'DEVELOPER',
@@ -50,11 +51,20 @@ export function EditUserModal({ user, onClose }: Props) {
         if (res.error) { setError(res.error.message); } else { setSuccess('Saved successfully.'); }
     };
 
-    const saveProfile = () => save({ name: form.name, email: form.email, jobTitle: form.jobTitle, department: form.department });
+    const saveProfile = () => save({
+        name: form.name,
+        email: form.email,
+        secondaryEmails: form.secondaryEmails,
+        jobTitle: form.jobTitle,
+        department: form.department
+    });
+
     const saveRole    = () => save({
         role: form.roleType === 'builtin' ? form.role : 'CUSTOM',
         customRoleId: form.roleType === 'custom' ? form.customRoleId : null,
-        teamId: form.teamId || null, reportingTo: form.reportingTo || null, isOrgRoot: form.isOrgRoot,
+        teamId: form.teamId || null,
+        reportingTo: form.reportingTo || null,
+        isOrgRoot: form.isOrgRoot,
     });
 
     const handleResetPassword = async () => {
@@ -109,11 +119,45 @@ export function EditUserModal({ user, onClose }: Props) {
                 <div style={{ padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {/* Profile tab */}
                     {tab === 'profile' && <>
-                        <Field label="Full Name"><input className="vault-input" value={form.name} onChange={(e) => up({ name: e.target.value })} /></Field>
-                        <Field label="Email"><input className="vault-input" type="email" value={form.email} onChange={(e) => up({ email: e.target.value })} /></Field>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            <Field label="Job Title"><input className="vault-input" value={form.jobTitle} onChange={(e) => up({ jobTitle: e.target.value })} /></Field>
-                            <Field label="Department"><input className="vault-input" value={form.department} onChange={(e) => up({ department: e.target.value })} /></Field>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <section>
+                                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--vault-text-secondary)', marginBottom: 10, letterSpacing: '0.04em' }}>Basic Identity</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <Field label="Full Name"><input className="vault-input" value={form.name} onChange={(e) => up({ name: e.target.value })} /></Field>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <Field label="Job Title"><input className="vault-input" value={form.jobTitle} onChange={(e) => up({ jobTitle: e.target.value })} /></Field>
+                                        <Field label="Department"><input className="vault-input" value={form.department} onChange={(e) => up({ department: e.target.value })} /></Field>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--vault-text-secondary)', marginBottom: 10, letterSpacing: '0.04em' }}>Email Addresses</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <Field label="Primary Email"><input className="vault-input" type="email" value={form.email} onChange={(e) => up({ email: e.target.value })} /></Field>
+                                    
+                                    <div>
+                                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--vault-text)', display: 'block', marginBottom: 5 }}>Secondary Emails</label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                            {form.secondaryEmails.map((email: string, i: number) => (
+                                                <div key={i} style={{ display: 'flex', gap: 8 }}>
+                                                    <input className="vault-input" style={{ flex: 1 }} value={email} onChange={(e) => {
+                                                        const next = [...form.secondaryEmails];
+                                                        next[i] = e.target.value;
+                                                        up({ secondaryEmails: next });
+                                                    }} />
+                                                    <button className="vault-btn vault-btn--ghost" onClick={() => {
+                                                        up({ secondaryEmails: form.secondaryEmails.filter((_: any, idx: number) => idx !== i) });
+                                                    }} style={{ color: 'var(--vault-danger)', padding: '0 10px' }}>✕</button>
+                                                </div>
+                                            ))}
+                                            <button className="vault-btn vault-btn--ghost" onClick={() => up({ secondaryEmails: [...form.secondaryEmails, ''] })} style={{ fontSize: 12, borderStyle: 'dashed' }}>
+                                                + Add another email
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                         <Footer loading={loading} error={error} success={success} onSave={saveProfile} />
                     </>}
@@ -145,7 +189,7 @@ export function EditUserModal({ user, onClose }: Props) {
                             <Field label="Custom Role">
                                 <select className="vault-input" value={form.customRoleId} onChange={(e) => up({ customRoleId: e.target.value })}>
                                     <option value="">Select…</option>
-                                    {(customRoles ?? []).filter((r: any) => !r.isBuiltIn).map((r: any) => <option key={r._id} value={r._id}>{r.name}</option>)}
+                                    {(customRoles?.data ?? []).filter((r: any) => !r.isBuiltIn).map((r: any) => <option key={r._id} value={r._id}>{r.name}</option>)}
                                 </select>
                             </Field>
                         )}
@@ -153,13 +197,13 @@ export function EditUserModal({ user, onClose }: Props) {
                             <Field label="Reports To">
                                 <select className="vault-input" value={form.reportingTo} onChange={(e) => up({ reportingTo: e.target.value })}>
                                     <option value="">— None —</option>
-                                    {(members ?? []).filter((m: any) => m._id !== user._id).map((m: any) => <option key={m._id} value={m._id}>{m.name}</option>)}
+                                    {(members?.data ?? []).filter((m: any) => m._id !== user._id).map((m: any) => <option key={m._id} value={m._id}>{m.name}</option>)}
                                 </select>
                             </Field>
                             <Field label="Team">
                                 <select className="vault-input" value={form.teamId} onChange={(e) => up({ teamId: e.target.value })}>
                                     <option value="">— None —</option>
-                                    {(teams ?? []).map((t: any) => <option key={t._id} value={t._id}>{t.name}</option>)}
+                                    {(teams?.data ?? []).map((t: any) => <option key={t._id} value={t._id}>{t.name}</option>)}
                                 </select>
                             </Field>
                         </div>

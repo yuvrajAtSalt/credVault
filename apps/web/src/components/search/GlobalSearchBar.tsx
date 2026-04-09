@@ -1,8 +1,16 @@
 'use client';
+import { useEffect, useState } from 'react';
 
 export function GlobalSearchBar() {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const shortcut = mounted ? (isMac ? '⌘K' : 'Ctrl K') : '⌘K';
+
     return (
         <button
+            suppressHydrationWarning
             onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
             style={{
                 display: 'flex', alignItems: 'center',
@@ -29,7 +37,7 @@ export function GlobalSearchBar() {
                 borderRadius: '4px', padding: '2px 6px',
                 fontSize: 11, fontWeight: 600, color: '#5E6C84'
             }}>
-                ⌘K
+                {shortcut}
             </div>
         </button>
     );

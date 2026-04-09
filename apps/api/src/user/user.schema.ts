@@ -17,6 +17,7 @@ export interface IUserDocument {
     organisationId: any;
     name: string;
     email: string;
+    secondaryEmails: string[];
     password: string;
     role: string;
     customRoleId?: any;                  // ref: CustomRole (Phase 09)
@@ -67,6 +68,7 @@ const userSchema = new Schema<IUserDocument>(
         organisationId:      { type: Schema.Types.ObjectId, ref: 'Organisation', required: true },
         name:                { type: String, required: true, trim: true },
         email:               { type: String, required: true, unique: true, lowercase: true, trim: true },
+        secondaryEmails:     { type: [String], default: [] },
         password:            { type: String, required: true },
         role:                { type: String, enum: [...VAULT_ROLES, 'CUSTOM'], required: true },
         customRoleId:        { type: Schema.Types.ObjectId as any, ref: 'CustomRole', default: null },
