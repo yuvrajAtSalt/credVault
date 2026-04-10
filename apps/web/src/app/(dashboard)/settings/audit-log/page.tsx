@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '@/lib/constants';
 import { useAuth } from '@/components/auth/auth-provider';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const AUDIT_ACTIONS = [
     'login','logout','credential.create','credential.view','credential.update',
@@ -159,17 +161,13 @@ export default function AuditLogPage() {
             {/* Table */}
             <div className="vault-card" style={{ padding: 0, overflow: 'hidden' }}>
                 {loading ? (
-                    <div style={{ padding: 48, textAlign: 'center', color: 'var(--vault-ink-muted)', fontSize: 13 }}>
-                        Loading audit events…
-                    </div>
+                    <SkeletonTable rows={10} cols={5} />
                 ) : logs.length === 0 ? (
-                    <div style={{ padding: 64, textAlign: 'center' }}>
-                        <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
-                        <p style={{ fontWeight: 600, color: 'var(--vault-ink)', margin: 0 }}>No audit events</p>
-                        <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)', marginTop: 4 }}>
-                            Events will appear here when actions are performed.
-                        </p>
-                    </div>
+                    <EmptyState
+                        title="No audit events"
+                        description="Events will appear here when actions are performed in your organization."
+                        icon={<span style={{ fontSize: 32 }}>📋</span>}
+                    />
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>

@@ -21,16 +21,19 @@ const NAV_ITEMS = [
     { href: '/compliance', label: 'Compliance', icon: '🛡' },
 ];
 
+const ADMIN_ITEMS = [
+    { href: '/settings/users', label: 'Users', icon: '👤' },
+    { href: '/settings/roles', label: 'Roles & Permissions', icon: '🔐' },
+    { href: '/settings/permissions/requests', label: 'Access Requests', icon: '✦' },
+    { href: '/settings/access-reviews', label: 'Access Reviews', icon: '✓' },
+    { href: '/settings/offboarding', label: 'Offboarding', icon: '🚪' },
+    { href: '/settings/change-windows', label: 'Change Windows', icon: '🕒' },
+    { href: '/settings/audit-log', label: 'Audit Log', icon: '📜' },
+];
+
 const SETTINGS_ITEMS = [
     { href: '/settings/profile', label: 'Profile', adminOnly: false },
-    { href: '/settings/organisation/general', label: 'General', adminOnly: true },
-    { href: '/settings/roles', label: 'Roles & Permissions', adminOnly: true },
-    { href: '/settings/permissions/requests', label: 'Access Requests', adminOnly: true },
-    { href: '/settings/users', label: 'Users', adminOnly: true },
-    { href: '/settings/access-reviews', label: 'Access Reviews', adminOnly: true },
-    { href: '/settings/offboarding', label: 'Offboarding', adminOnly: true },
-    { href: '/settings/change-windows', label: 'Change Windows', adminOnly: true },
-    { href: '/settings/audit-log', label: 'Audit Log', adminOnly: true },
+    { href: '/settings/organisation/general', label: 'General Settings', adminOnly: true },
 ];
 
 function UserAvatar({ name }: { name?: string }) {
@@ -107,6 +110,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                 </Link>
                             );
                         })}
+
+                        {/* Administration group */}
+                        {isAdmin && (
+                            <>
+                                <span className="vault-sidebar__section-label" style={{ marginTop: 16 }}>Administration</span>
+                                {ADMIN_ITEMS.map((item) => {
+                                    const active = pathname === item.href || pathname.startsWith(item.href);
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setSidebarOpen(false)}
+                                            className={`vault-nav-item${active ? ' is-active' : ''}`}
+                                        >
+                                            <span style={{ fontSize: 14 }}>{item.icon}</span>
+                                            {item.label}
+                                        </Link>
+                                    );
+                                })}
+                            </>
+                        )}
 
                         {/* Settings group */}
                         <span className="vault-sidebar__section-label" style={{ marginTop: 16 }}>Settings</span>

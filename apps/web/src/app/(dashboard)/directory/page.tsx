@@ -11,6 +11,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/components/auth/auth-provider';
 import { api } from '@/lib/api';
 import { VAULT_ROLES, ROLE_LABELS, type VaultRole } from '@/lib/constants';
+import { SkeletonCardGrid } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Member {
     _id: string;
@@ -179,12 +181,15 @@ export default function DirectoryPage() {
             )}
 
             {loading ? (
-                <p style={{ color: 'var(--vault-ink-muted)', fontSize: 13 }}>Loading directory…</p>
+                <SkeletonCardGrid count={8} />
             ) : view === 'grid' ? (
                 // Grid view
                 <>
                     {filtered.length === 0 ? (
-                        <p style={{ color: 'var(--vault-ink-subtle)', fontSize: 13 }}>No members found.</p>
+                        <EmptyState
+                            title="No members found"
+                            description={search || roleFilter || teamFilter ? 'No members match your current filters.' : 'There are no active members in your organization directory.'}
+                        />
                     ) : (
                         <div style={{
                             display: 'grid',

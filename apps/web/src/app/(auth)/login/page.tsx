@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -10,9 +10,18 @@ import { API_BASE_URL } from '@/lib/constants';
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { setAuth } = useAuth();
-
+    const { setAuth, token, isLoading } = useAuth();
     const [email, setEmail] = useState('');
+
+    // Auto-redirect if already logged in
+    useEffect(() => {
+        if (!isLoading && token) {
+            const from = searchParams.get('from') || '/dashboard';
+            // Prevent redirecting to login itself
+            const dest = from.startsWith('/login') ? '/dashboard' : from;
+            router.replace(dest);
+        }
+    }, [token, isLoading, router, searchParams]);
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');

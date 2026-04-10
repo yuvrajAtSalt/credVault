@@ -109,10 +109,10 @@ export default function OffboardingDetailPage() {
             <div className="vault-page-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--vault-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800 }}>
-                        {checklist.userId.name[0]}
+                        {checklist.userId?.name?.[0] || 'U'}
                     </div>
                     <div>
-                        <h1 className="vault-page-title">Offboarding: {checklist.userId.name}</h1>
+                        <h1 className="vault-page-title">Offboarding: {checklist.userId?.name || 'Unknown User'}</h1>
                         <p className="vault-page-subtitle">Last working day: {new Date(checklist.targetDate).toLocaleDateString()} · {checklist.status.toUpperCase()}</p>
                     </div>
                 </div>

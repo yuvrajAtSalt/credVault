@@ -1,3 +1,4 @@
+import 'express-async-errors';
 import express from 'express';
 import { createServer } from 'http';
 import { registerMiddlewares } from './routes/routes';
