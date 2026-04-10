@@ -51,6 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(newToken);
         localStorage.setItem('vault_user', JSON.stringify(newUser));
         localStorage.setItem('vault_token', newToken);
+
+        // Explicitly set cookie for middleware visibility during client-side navigation
+        // path=/ ensures it's available across the whole app
+        // SameSite=Lax is standard for auth cookies
+        const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `vault_token=${newToken}; path=/; max-age=1800; SameSite=Lax${secure}`;
     };
 
     const clearAuth = () => {
@@ -58,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null);
         localStorage.removeItem('vault_user');
         localStorage.removeItem('vault_token');
+        document.cookie = 'vault_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     };
 
     return (

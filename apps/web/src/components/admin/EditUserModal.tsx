@@ -14,9 +14,10 @@ type Tab = 'profile' | 'role' | 'account';
 interface Props {
     user: any;
     onClose: () => void;
+    readonly?: boolean;
 }
 
-export function EditUserModal({ user, onClose }: Props) {
+export function EditUserModal({ user, onClose, readonly }: Props) {
     const [tab, setTab]         = useState<Tab>('profile');
     const [loading, setLoading] = useState(false);
     const [error, setError]     = useState('');
@@ -98,7 +99,7 @@ export function EditUserModal({ user, onClose }: Props) {
             <div className="vault-modal vault-modal--md" onClick={(e) => e.stopPropagation()}>
                 <div style={{ padding: '20px 24px 0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Edit: {user.name}</h2>
+                        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>{readonly ? 'View' : 'Edit'}: {user.name}</h2>
                         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--vault-text-secondary)' }}>✕</button>
                     </div>
                     {/* Tabs */}
@@ -118,7 +119,7 @@ export function EditUserModal({ user, onClose }: Props) {
                     </div>
                 </div>
 
-                <div style={{ padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <fieldset disabled={readonly} style={{ border: 'none', margin: 0, padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14, opacity: readonly ? 0.9 : 1 }}>
                     {/* Profile tab */}
                     {tab === 'profile' && <>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -161,7 +162,7 @@ export function EditUserModal({ user, onClose }: Props) {
                                 </div>
                             </section>
                         </div>
-                        <Footer loading={loading} error={error} success={success} onSave={saveProfile} />
+                        {!readonly && <Footer loading={loading} error={error} success={success} onSave={saveProfile} />}
                     </>}
 
                     {/* Role & Team tab */}
@@ -230,13 +231,14 @@ export function EditUserModal({ user, onClose }: Props) {
                             onChange={(checked) => up({ isOrgRoot: checked })}
                             label="Set as organisation root"
                         />
-                        <Footer loading={loading} error={error} success={success} onSave={saveRole} />
+                        {!readonly && <Footer loading={loading} error={error} success={success} onSave={saveRole} />}
                     </>}
 
                     {/* Account tab */}
                     {tab === 'account' && <>
-                        <div className="vault-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Reset Password</p>
+                        {!readonly && (
+                            <div className="vault-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Reset Password</p>
                             <div style={{ display: 'flex', gap: 8 }}>
                                 <input className="vault-input" type="text" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="New temporary password" style={{ flex: 1 }} />
                                 <button className="vault-btn vault-btn--ghost" onClick={handleResetPassword} disabled={loading} style={{ fontSize: 12 }}>Reset</button>
@@ -247,34 +249,37 @@ export function EditUserModal({ user, onClose }: Props) {
                                     onChange={(checked) => up({ forcePasswordChange: checked })}
                                     label="Force password change on next login"
                                 />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="vault-card" style={{ padding: 16 }}>
                             <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600 }}>
                                 Account Status: <span style={{ color: user.isActive ? 'var(--vault-success)' : 'var(--vault-danger)' }}>{user.isActive ? 'Active' : 'Inactive'}</span>
                             </p>
-                            {user.isActive ? (
-                                confirmDeact ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        <p style={{ margin: 0, fontSize: 12, color: 'var(--vault-danger)' }}>
-                                            Deactivating {user.name} will revoke their access to all projects. This can be reversed.
-                                        </p>
-                                        <div style={{ display: 'flex', gap: 8 }}>
-                                            <button className="vault-btn vault-btn--danger" onClick={deactivate} disabled={loading}>Confirm Deactivate</button>
-                                            <button className="vault-btn vault-btn--ghost" onClick={() => setConfirmDeact(false)}>Cancel</button>
+                            {!readonly && (
+                                user.isActive ? (
+                                    confirmDeact ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                            <p style={{ margin: 0, fontSize: 12, color: 'var(--vault-danger)' }}>
+                                                Deactivating {user.name} will revoke their access to all projects. This can be reversed.
+                                            </p>
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                <button className="vault-btn vault-btn--danger" onClick={deactivate} disabled={loading}>Confirm Deactivate</button>
+                                                <button className="vault-btn vault-btn--ghost" onClick={() => setConfirmDeact(false)}>Cancel</button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <button className="vault-btn vault-btn--danger" onClick={() => setConfirmDeact(true)}>Deactivate Account</button>
+                                    )
                                 ) : (
-                                    <button className="vault-btn vault-btn--danger" onClick={() => setConfirmDeact(true)}>Deactivate Account</button>
+                                    <button className="vault-btn vault-btn--primary" onClick={reactivate} disabled={loading}>Reactivate Account</button>
                                 )
-                            ) : (
-                                <button className="vault-btn vault-btn--primary" onClick={reactivate} disabled={loading}>Reactivate Account</button>
                             )}
                         </div>
                         {(error || success) && <p style={{ margin: 0, fontSize: 12, color: error ? 'var(--vault-danger)' : 'var(--vault-success)', padding: '8px 12px', borderRadius: 6, background: error ? 'rgba(222,53,11,0.08)' : 'rgba(54,179,126,0.1)' }}>{error || success}</p>}
                     </>}
-                </div>
+                </fieldset>
             </div>
         </div>
     );

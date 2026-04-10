@@ -216,7 +216,7 @@ export const initiateOffboarding = async (targetUserId: string, body: { targetDa
 
     const credentialAudit = (userCreds as any[]).map(c => ({
         credentialId: c._id,
-        projectName: c.projectId.name,
+        projectName: c.projectId?.name || 'Unknown Project',
         label: c.label,
         category: c.category,
         action: 'pending'

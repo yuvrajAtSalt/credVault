@@ -67,9 +67,20 @@ export const listUsers = async (
         UserModel.countDocuments(filter),
     ]);
 
+    const userIds = users.map(u => u._id);
+    const { OffboardingChecklistModel } = await import('../compliance/offboarding.schema');
+    const checklists = await OffboardingChecklistModel.find({
+        userId: { $in: userIds },
+        status: 'in_progress'
+    }).select('userId _id').lean();
+
+    const offboardingMap = new Map();
+    checklists.forEach(c => offboardingMap.set(String(c.userId), c._id));
+
     // Attach effective permissions + special grants count to each user
     const enriched = users.map((u) => ({
         ...u,
+        activeOffboardingId: offboardingMap.get(String(u._id)) || null,
         specialPermissionsCount: ((u as any).specialPermissions ?? []).filter((sp: any) => sp.isActive).length,
     }));
 

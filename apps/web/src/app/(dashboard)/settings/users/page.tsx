@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
 import { api } from '@/lib/api';
 import { ROLE_LABELS, VaultRole } from '@/lib/constants';
@@ -25,6 +26,9 @@ export default function UsersPage() {
     const [editUser, setEditUser]   = useState<any>(null);
     const [permUser, setPermUser]       = useState<any>(null);
     const [offboardUser, setOffboardUser] = useState<any>(null);
+    const [viewUser, setViewUser]       = useState<any>(null);
+
+    const router = useRouter();
 
     const query = new URLSearchParams({
         page: String(page), limit: '20',
@@ -154,11 +158,15 @@ export default function UsersPage() {
                                     {/* Actions */}
                                     <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                                         <div style={{ display: 'flex', gap: 6 }}>
+                                            <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => setViewUser(u)}>View</button>
                                             <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => setEditUser(u)}>Edit</button>
                                             <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => setPermUser(u)}>Permissions</button>
-                                            {u.isActive && (
+                                            
+                                            {u.activeOffboardingId ? (
+                                                <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px', color: 'var(--vault-primary)' }} onClick={() => router.push(`/settings/offboarding/${u.activeOffboardingId}`)}>Continue</button>
+                                            ) : u.isActive ? (
                                                 <button className="vault-btn vault-btn--ghost" style={{ fontSize: 11, padding: '4px 10px', color: 'var(--vault-danger)' }} onClick={() => setOffboardUser(u)}>Offboard</button>
-                                            )}
+                                            ) : null}
                                         </div>
                                     </td>
                                 </tr>
@@ -184,6 +192,7 @@ export default function UsersPage() {
             {/* ── Modals ── */}
             {addOpen      && <AddEmployeeModal onClose={() => { setAddOpen(false); refresh(); }} />}
             {editUser     && <EditUserModal user={editUser} onClose={() => { setEditUser(null); refresh(); }} />}
+            {viewUser     && <EditUserModal user={viewUser} onClose={() => { setViewUser(null); }} readonly={true} />}
             {permUser     && <UserPermissionsDrawer user={permUser} onClose={() => { setPermUser(null); refresh(); }} />}
             {offboardUser && <InitiateOffboardingModal user={offboardUser} onClose={() => { setOffboardUser(null); refresh(); }} />}
         </div>
