@@ -14,7 +14,7 @@ realtimeRouter.get('/events', async (req: Request | any, res: Response, next: Ne
     if (!user && req.query.token) {
         try {
             const decoded: any = jwt.verify(req.query.token as string, process.env.VAULT_JWT_SECRET as string);
-            user = await UserModel.findById(decoded.id).select('-password').lean();
+            user = await UserModel.findById(decoded._id).select('-password').lean();
         } catch (e) {
             // fail silently and let the 401 block catch it
         }
@@ -24,12 +24,11 @@ realtimeRouter.get('/events', async (req: Request | any, res: Response, next: Ne
         return res.status(401).send('Unauthorized');
     }
 
-    res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no', // Disable buffering for Nginx
-    });
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for Nginx
+    res.flushHeaders();
 
     const userId = String(user._id);
     registerSSEConnection(userId, res);

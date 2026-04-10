@@ -94,7 +94,7 @@ export default function AccessReviewsListPage() {
     if (loading) return <div style={{ padding: 48, textAlign: 'center' }}>Loading reviews…</div>;
 
     return (
-        <div className="vault-page">
+        <div style={{ padding: '24px' }}>
             <div className="vault-page-header">
                 <div>
                     <h1 className="vault-page-title">Access Reviews</h1>

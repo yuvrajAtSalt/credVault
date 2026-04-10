@@ -6,6 +6,11 @@ import { api } from '@/lib/api';
 import { API_BASE_URL } from '@/lib/constants';
 import { useAuth } from '@/components/auth/auth-provider';
 
+import AccessReviewsPage from '../settings/access-reviews/page';
+import OffboardingPage from '../settings/offboarding/page';
+import ChangeWindowsPage from '../settings/change-windows/page';
+import ApprovalsQueuePage from './approvals/page';
+
 interface ComplianceHealth {
     summary: {
         avgScore: number;
@@ -24,15 +29,52 @@ interface ComplianceHealth {
     }>;
 }
 
-export default function ComplianceHealthPage() {
+export default function CompliancePage() {
+    const [tab, setTab] = useState<'health' | 'reviews' | 'offboarding' | 'change-windows' | 'approvals'>('health');
+
+    const tabStyle = (active: boolean) => ({
+        padding: '10px 18px', background: 'none', border: 'none',
+        cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400,
+        color: active ? 'var(--vault-primary)' : 'var(--vault-ink-muted)',
+        borderBottom: active ? '2px solid var(--vault-primary)' : '2px solid transparent',
+        transition: 'all 120ms',
+    });
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--vault-border)', padding: '0 24px', background: 'var(--vault-bg)', flexShrink: 0 }}>
+                <button suppressHydrationWarning style={tabStyle(tab === 'health')} onClick={() => setTab('health')}>Health Dashboard</button>
+                <button suppressHydrationWarning style={tabStyle(tab === 'reviews')} onClick={() => setTab('reviews')}>Access Reviews</button>
+                <button suppressHydrationWarning style={tabStyle(tab === 'offboarding')} onClick={() => setTab('offboarding')}>Offboarding</button>
+                <button suppressHydrationWarning style={tabStyle(tab === 'change-windows')} onClick={() => setTab('change-windows')}>Change Windows</button>
+                <button suppressHydrationWarning style={tabStyle(tab === 'approvals')} onClick={() => setTab('approvals')}>Approval Queue</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+                {tab === 'health' && <ComplianceHealthTab />}
+                {tab === 'reviews' && <AccessReviewsPage />}
+                {tab === 'offboarding' && <OffboardingPage />}
+                {tab === 'change-windows' && <ChangeWindowsPage />}
+                {tab === 'approvals' && <ApprovalsQueuePage />}
+            </div>
+        </div>
+    );
+}
+
+function ComplianceHealthTab() {
     const { user } = useAuth();
     const [health, setHealth] = useState<ComplianceHealth | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchHealth = useCallback(async () => {
-        const { data } = await api.get<any>('/api/v1/compliance/health');
-        setHealth((data as any)?.data ?? null);
-        setLoading(false);
+        try {
+            const { data } = await api.get<any>('/api/v1/health');
+            setHealth(data ?? null);
+        } catch (e) {
+            console.error('Failed to fetch health data:', e);
+            setHealth(null);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => { fetchHealth(); }, [fetchHealth]);
@@ -47,7 +89,7 @@ export default function ComplianceHealthPage() {
     if (!health) return <div className="vault-page">Failed to load compliance data.</div>;
 
     return (
-        <main className="vault-page">
+        <div style={{ padding: '24px' }}>
             <div className="vault-page-header">
                 <div>
                     <h1 className="vault-page-title">Compliance Health</h1>
@@ -151,7 +193,7 @@ export default function ComplianceHealthPage() {
                             style={{ fontSize: 11 }}
                             onClick={() => {
                                 const token = localStorage.getItem('vault_token');
-                                window.open(`${API_BASE_URL}/api/v1/compliance/reports/export?type=access_reviews&token=${token}`, '_blank');
+                                window.open(`${API_BASE_URL}/api/v1/reports/export?type=access_reviews&token=${token}`, '_blank');
                             }}
                         >
                             Export Access Reviews
@@ -161,7 +203,7 @@ export default function ComplianceHealthPage() {
                             style={{ fontSize: 11 }}
                             onClick={() => {
                                 const token = localStorage.getItem('vault_token');
-                                window.open(`${API_BASE_URL}/api/v1/compliance/reports/export?type=change_log&token=${token}`, '_blank');
+                                window.open(`${API_BASE_URL}/api/v1/reports/export?type=change_log&token=${token}`, '_blank');
                             }}
                         >
                             Export Change Log
@@ -188,6 +230,6 @@ export default function ComplianceHealthPage() {
                     </ul>
                 </div>
             </div>
-        </main>
+        </div>
     );
 }

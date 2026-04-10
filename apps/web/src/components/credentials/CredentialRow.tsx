@@ -84,7 +84,7 @@ export function CredentialRow({ cred, projectId, currentUserId, canDelete, onDel
     const handleRequestApproval = async (e: React.FormEvent) => {
         e.preventDefault();
         setRevealing(true);
-        const { error } = await api.post('/api/v1/compliance/approvals', {
+        const { error } = await api.post('/api/v1/approvals', {
             projectId,
             credentialId: cred._id,
             reason

@@ -42,7 +42,7 @@ export default function ChangeWindowsPage() {
 
     const fetchWindows = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/v1/compliance/change-windows`, {
+            const res = await fetch(`${API_BASE_URL}/api/v1/change-windows`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const json = await res.json();
@@ -70,7 +70,7 @@ export default function ChangeWindowsPage() {
             toast.error('Name and at least one day are required');
             return;
         }
-        const res = await fetch(`${API_BASE_URL}/api/v1/compliance/change-windows`, {
+        const res = await fetch(`${API_BASE_URL}/api/v1/change-windows`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ export default function ChangeWindowsPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this change window?')) return;
-        const res = await fetch(`${API_BASE_URL}/api/v1/compliance/change-windows/${id}`, {
+        const res = await fetch(`${API_BASE_URL}/api/v1/change-windows/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` },
         });
@@ -104,7 +104,7 @@ export default function ChangeWindowsPage() {
     if (loading) return <div style={{ padding: 48, textAlign: 'center' }}>Loading windows…</div>;
 
     return (
-        <div className="vault-page">
+        <div style={{ padding: '24px' }}>
             <div className="vault-page-header">
                 <div>
                     <h1 className="vault-page-title">Change Windows</h1>

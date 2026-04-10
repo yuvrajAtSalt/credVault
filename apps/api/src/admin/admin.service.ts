@@ -9,6 +9,7 @@ import { resolvePermissionsSync, expireStalePermissions } from '../utils/permiss
 import { enqueueEmail } from '../utils/email/queue';
 import { templates } from '../utils/email/templates';
 import orgRepo from '../organisation/organisation.repo';
+import { createNotification, buildNotificationUrl } from '../notification/notification.service';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function passwordStrengthCheck(pw: string) {
@@ -178,7 +179,9 @@ export const createUser = async (body: any, currentUser: any) => {
 };
 
 export const updateUser = async (userId: string, body: any, currentUser: any) => {
-    const user = await UserModel.findOne({ _id: userId, organisationId: currentUser.organisationId }).lean();
+    const user = await UserModel.findOne({ _id: userId, organisationId: currentUser.organisationId })
+        .populate('customRoleId', 'name')
+        .lean();
     if (!user) throw { statusCode: 404, message: 'USER NOT FOUND' };
 
     const allowed = ['name', 'email', 'secondaryEmails', 'role', 'customRoleId', 'jobTitle', 'department',
@@ -200,6 +203,8 @@ export const updateUser = async (userId: string, body: any, currentUser: any) =>
         .populate('customRoleId', 'name slug color badgeLabel permissions')
         .lean();
 
+    if (!updated) throw { statusCode: 404, message: 'USER NOT FOUND' };
+
     await writeAuditLog({
         actorId: String(currentUser._id),
         action: 'user.updated',
@@ -208,6 +213,69 @@ export const updateUser = async (userId: string, body: any, currentUser: any) =>
         organisationId: String(currentUser.organisationId),
         meta: { fields: Object.keys(patch) },
     });
+
+    if (patch.role || patch.customRoleId || patch.teamId || patch.reportingTo) {
+        let notifType: any = null;
+        let notifTitle = '';
+        let emailPayload: any = null;
+        let emailSubject = '';
+
+        if (patch.role || patch.customRoleId) {
+            notifType = 'account.role_changed';
+            const oldRoleName = user.role === 'CUSTOM' ? (user.customRoleId as any)?.name || 'Custom Role' : user.role;
+            const newRoleName = updated.role === 'CUSTOM' ? (updated.customRoleId as any)?.name || 'Custom Role' : updated.role;
+            notifTitle = `Your role was changed to ${newRoleName}`;
+            emailSubject = 'Your VaultStack Role was Changed';
+            emailPayload = {
+                recipientName: (updated as any).name,
+                oldRole: oldRoleName,
+                newRole: newRoleName,
+                changedBy: currentUser.name || 'An admin',
+                dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050'}/settings/profile`,
+                email: (updated as any).email,
+            };
+        }
+
+        if (notifType) {
+            await createNotification({
+                organisationId: String(currentUser.organisationId),
+                userId,
+                type: notifType,
+                title: notifTitle,
+                url: buildNotificationUrl(notifType, {}),
+                actorId: String(currentUser._id),
+            });
+            if (emailPayload && notifType === 'account.role_changed') {
+                await enqueueEmail({
+                    to: (updated as any).email,
+                    subject: emailSubject,
+                    ...(await templates.RoleChanged(emailPayload)),
+                });
+            }
+        }
+        
+        if (patch.reportingTo && String(patch.reportingTo) !== String(user.reportingTo)) {
+            await createNotification({
+                organisationId: String(currentUser.organisationId),
+                userId,
+                type: 'member.reporting_changed',
+                title: 'Your manager has been updated',
+                url: buildNotificationUrl('member.reporting_changed', {}),
+                actorId: String(currentUser._id),
+            });
+        }
+
+        if (patch.teamId && String(patch.teamId) !== String(user.teamId)) {
+            await createNotification({
+                organisationId: String(currentUser.organisationId),
+                userId,
+                type: 'team.assigned',
+                title: 'You have been assigned to a new team',
+                url: buildNotificationUrl('team.assigned', {}),
+                actorId: String(currentUser._id),
+            });
+        }
+    }
 
     return { statusCode: 200, message: 'USER UPDATED', data: updated };
 };
@@ -238,6 +306,16 @@ export const resetPassword = async (userId: string, body: { newPassword: string;
         targetType: 'User', targetId: userId, organisationId: String(currentUser.organisationId),
         meta: { action: 'password_reset' },
     });
+
+    await createNotification({
+        organisationId: String(currentUser.organisationId),
+        userId,
+        type: 'account.password_reset',
+        title: 'Your password was reset by an admin',
+        url: buildNotificationUrl('account.password_reset', {}),
+        actorId: String(currentUser._id),
+    });
+
     return { statusCode: 200, message: 'PASSWORD RESET SUCCESSFULLY', data: null };
 };
 
@@ -403,6 +481,16 @@ export const grantPermission = async (userId: string, body: any, currentUser: an
 
     if (value) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+        
+        await createNotification({
+            organisationId: String(currentUser.organisationId),
+            userId,
+            type: 'permission.granted',
+            title: `You were granted the ${permission} permission`,
+            url: buildNotificationUrl('permission.granted', {}),
+            actorId: String(currentUser._id),
+        });
+
         await enqueueEmail({
             to: user.email,
             subject: `New Permission Granted: ${permission}`,
@@ -415,6 +503,15 @@ export const grantPermission = async (userId: string, body: any, currentUser: an
                 dashboardUrl: `${appUrl}/settings/profile`,
                 email: user.email,
             })),
+        });
+    } else {
+        await createNotification({
+            organisationId: String(currentUser.organisationId),
+            userId,
+            type: 'permission.revoked',
+            title: `Your ${permission} permission was revoked`,
+            url: buildNotificationUrl('permission.revoked', {}),
+            actorId: String(currentUser._id),
         });
     }
 
@@ -436,6 +533,15 @@ export const revokePermission = async (userId: string, permissionName: string, c
         targetType: 'User', targetId: userId,
         organisationId: String(currentUser.organisationId),
         meta: { permission: permissionName },
+    });
+
+    await createNotification({
+        organisationId: String(currentUser.organisationId),
+        userId,
+        type: 'permission.revoked',
+        title: `Your ${permissionName} permission was revoked`,
+        url: buildNotificationUrl('permission.revoked', {}),
+        actorId: String(currentUser._id),
     });
 
     return { statusCode: 200, message: 'PERMISSION REVOKED', data: null };

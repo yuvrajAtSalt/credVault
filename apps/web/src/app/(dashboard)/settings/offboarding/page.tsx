@@ -43,7 +43,7 @@ export default function OffboardingListPage() {
     if (loading) return <div style={{ padding: 48, textAlign: 'center' }}>Loading checklists…</div>;
 
     return (
-        <div className="vault-page">
+        <div style={{ padding: '24px' }}>
             <div className="vault-page-header">
                 <div>
                     <h1 className="vault-page-title">Employee Offboarding</h1>

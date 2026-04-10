@@ -23,7 +23,7 @@ export default function ApprovalsQueuePage() {
     const [loading, setLoading] = useState(true);
 
     const fetchRequests = useCallback(async () => {
-        const { data } = await api.get<any>('/api/v1/compliance/approvals');
+        const { data } = await api.get<any>('/api/v1/approvals');
         setRequests((data as any)?.data ?? []);
         setLoading(false);
     }, []);
@@ -31,7 +31,7 @@ export default function ApprovalsQueuePage() {
     useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
     const handleDecision = async (id: string, status: 'approved' | 'rejected') => {
-        const { error } = await api.patch(`/api/v1/compliance/approvals/${id}`, { status });
+        const { error } = await api.patch(`/api/v1/approvals/${id}`, { status });
         if (!error) {
             toast.success(`Request ${status}`);
             fetchRequests();
@@ -46,7 +46,7 @@ export default function ApprovalsQueuePage() {
     const history = requests.filter(r => r.status !== 'pending');
 
     return (
-        <main className="vault-page">
+        <div style={{ padding: '24px' }}>
             <div className="vault-page-header">
                 <div>
                     <h1 className="vault-page-title">Approval Queue</h1>
@@ -126,6 +126,6 @@ export default function ApprovalsQueuePage() {
                     </tbody>
                 </table>
             </div>
-        </main>
+        </div>
     );
 }

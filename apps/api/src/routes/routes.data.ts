@@ -63,4 +63,8 @@ export const excludedRoutes: ExcludedRoutes = [
         path: match('/'),
         method: 'GET',
     },
+    {
+        path: match('/api/v1/realtime/events'),
+        method: 'GET',
+    },
 ];

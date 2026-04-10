@@ -316,6 +316,31 @@
     background: #bf2600;
   }
 
+  /* ── Table ───────────────────────────────────────────── */
+  .vault-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+  }
+  
+  .vault-table th,
+  .vault-table td {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--vault-border);
+  }
+  
+  .vault-table th {
+    font-weight: 600;
+    color: var(--vault-ink-muted);
+    font-size: 12px;
+    background: var(--vault-surface);
+  }
+  
+  .vault-table tbody tr:hover {
+    background: var(--vault-surface-2);
+  }
+
   /* ── Input ───────────────────────────────────────────── */
   .vault-input {
     width: 100%;

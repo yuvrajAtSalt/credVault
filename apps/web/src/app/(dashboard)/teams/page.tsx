@@ -12,7 +12,16 @@ import { useToast } from '@/components/ui/Toast';
 import { api } from '@/lib/api';
 
 interface Team { _id: string; name: string; slug: string; color: string; description?: string; leadId?: any; parentTeamId?: any; memberCount?: number; }
-interface OrgMember { _id: string; name: string; role: string; jobTitle?: string; department?: string; avatarUrl?: string; isOrgRoot?: boolean; reportingTo?: any; teamId?: any; }
+interface OrgMember { _id: string; name: string; role: string; jobTitle?: string; department?: string; avatarUrl?: string; isOrgRoot?: boolean; reportingTo?: any; teamId?: any; children?: OrgMember[]; }
+
+function buildTeamTree(members: OrgMember[], parentId: string | null): OrgMember[] {
+    return members
+        .filter((m) => {
+            const mParentId = typeof m.reportingTo === 'object' ? m.reportingTo?._id : m.reportingTo;
+            return String(mParentId ?? null) === String(parentId);
+        })
+        .map((m) => ({ ...m, children: buildTeamTree(members, String(m._id)) }));
+}
 
 export default function OrgStructurePage() {
     const { user } = useAuth();
@@ -102,15 +111,35 @@ export default function OrgStructurePage() {
 
     const teamColors = ['#0052CC','#36B37E','#FF5630','#FFAB00','#6554C0','#00B8D9'];
 
-    // Nested team tree for display
     const rootTeams = teams.filter(t => !t.parentTeamId);
     const childrenOf = (parentId: string) => teams.filter(t => String(t.parentTeamId?._id ?? t.parentTeamId) === parentId);
+
+    // Compute scoped org chart if a team is highlighted
+    let displayRoots = roots;
+    let displayUnassigned = unassigned;
+
+    if (highlightTeam) {
+        const teamMembers = allMembers.filter(m => m.teamId?.name === highlightTeam);
+        const teamMemberIds = new Set(teamMembers.map(m => String(m._id)));
+        
+        // A member is a root in the team chart if they have no manager, or their manager is NOT in the team
+        const teamRoots = teamMembers.filter(m => {
+            const managerId = typeof m.reportingTo === 'object' ? m.reportingTo?._id : m.reportingTo;
+            return !managerId || !teamMemberIds.has(String(managerId));
+        });
+
+        displayRoots = teamRoots.map(root => ({
+            ...root,
+            children: buildTeamTree(teamMembers, String(root._id))
+        }));
+        displayUnassigned = []; // In a scoped team view, we typically don't show unassigned org members
+    }
 
     return (
         <main className="vault-page">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Org Structure</h1>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--vault-ink)', margin: 0 }}>Teams</h1>
                     <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)', marginTop: 4, marginBottom: 0 }}>
                         Manage teams, reporting lines, and organisation hierarchy
                     </p>
@@ -181,8 +210,8 @@ export default function OrgStructurePage() {
                             <p style={{ fontSize: 13, color: 'var(--vault-ink-muted)' }}>Loading org chart…</p>
                         ) : (
                             <OrgTreeRenderer
-                                roots={roots}
-                                unassigned={unassigned}
+                                roots={displayRoots}
+                                unassigned={displayUnassigned}
                                 onSelect={(node) => setSelected(allMembers.find(m => m._id === node._id) ?? null)}
                                 onReportingChange={handleReportingChange}
                                 editable

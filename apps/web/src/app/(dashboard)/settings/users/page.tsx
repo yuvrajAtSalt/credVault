@@ -7,6 +7,7 @@ import { ROLE_LABELS, VaultRole } from '@/lib/constants';
 import { AddEmployeeModal } from '@/components/admin/AddEmployeeModal';
 import { EditUserModal } from '@/components/admin/EditUserModal';
 import { UserPermissionsDrawer } from '@/components/admin/UserPermissionsDrawer';
+import { InitiateOffboardingModal } from '@/components/admin/InitiateOffboardingModal';
 
 const fetcher = (url: string) => api.get<any>(url).then((r) => r.data);
 
@@ -22,7 +23,8 @@ export default function UsersPage() {
     const [page, setPage]           = useState(1);
     const [addOpen, setAddOpen]     = useState(false);
     const [editUser, setEditUser]   = useState<any>(null);
-    const [permUser, setPermUser]   = useState<any>(null);
+    const [permUser, setPermUser]       = useState<any>(null);
+    const [offboardUser, setOffboardUser] = useState<any>(null);
 
     const query = new URLSearchParams({
         page: String(page), limit: '20',
@@ -180,9 +182,10 @@ export default function UsersPage() {
             </div>
 
             {/* ── Modals ── */}
-            {addOpen && <AddEmployeeModal onClose={() => { setAddOpen(false); refresh(); }} />}
-            {editUser && <EditUserModal user={editUser} onClose={() => { setEditUser(null); refresh(); }} />}
-            {permUser && <UserPermissionsDrawer user={permUser} onClose={() => { setPermUser(null); refresh(); }} />}
+            {addOpen      && <AddEmployeeModal onClose={() => { setAddOpen(false); refresh(); }} />}
+            {editUser     && <EditUserModal user={editUser} onClose={() => { setEditUser(null); refresh(); }} />}
+            {permUser     && <UserPermissionsDrawer user={permUser} onClose={() => { setPermUser(null); refresh(); }} />}
+            {offboardUser && <InitiateOffboardingModal user={offboardUser} onClose={() => { setOffboardUser(null); refresh(); }} />}
         </div>
     );
 }

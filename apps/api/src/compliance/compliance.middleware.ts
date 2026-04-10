@@ -12,7 +12,7 @@ export const checkChangeWindow = async (req: Request, res: Response, next: NextF
         return next();
     }
 
-    const user = (req as any).user;
+    const user = (req as any).currentUser;
     if (!user) return next();
 
     // Sysadmins bypass change windows
