@@ -6,6 +6,8 @@ import { useAuth } from '@/components/auth/auth-provider';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { Badge } from '@/components/ui/Badge';
+import { SkeletonCardGrid } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { api } from '@/lib/api';
 import { ROLE_LABELS, type VaultRole } from '@/lib/constants';
 
@@ -86,14 +88,18 @@ export default function DashboardPage() {
             </div>
 
             {loadingProjects && (
-                <p style={{ fontSize: 14, color: 'var(--vault-ink-muted)' }}>Loading projects…</p>
+                <div style={{ padding: '10px 0' }}>
+                    <SkeletonCardGrid count={3} />
+                </div>
             )}
 
             {!loadingProjects && recentProjects.length === 0 && (
-                <div className="vault-card" style={{ textAlign: 'center', padding: '32px 24px' }}>
-                    <p style={{ fontSize: 14, color: 'var(--vault-ink-muted)', margin: 0 }}>
-                        No projects yet. <Link href="/projects" style={{ color: 'var(--vault-primary)' }}>Create one →</Link>
-                    </p>
+                <div className="vault-card" style={{ padding: 0 }}>
+                    <EmptyState
+                        title="No projects here"
+                        description="You aren't associated with any active projects yet."
+                        action={{ label: 'Go to Projects', onClick: () => window.location.href = '/projects' }}
+                    />
                 </div>
             )}
 

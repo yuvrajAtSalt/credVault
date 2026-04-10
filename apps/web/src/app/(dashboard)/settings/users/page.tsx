@@ -9,6 +9,8 @@ import { AddEmployeeModal } from '@/components/admin/AddEmployeeModal';
 import { EditUserModal } from '@/components/admin/EditUserModal';
 import { UserPermissionsDrawer } from '@/components/admin/UserPermissionsDrawer';
 import { InitiateOffboardingModal } from '@/components/admin/InitiateOffboardingModal';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const fetcher = (url: string) => api.get<any>(url).then((r) => r.data);
 
@@ -96,11 +98,17 @@ export default function UsersPage() {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: 'var(--vault-text-secondary)' }}>Loading…</td></tr>
+                                <tr><td colSpan={8} style={{ padding: 0 }}><SkeletonTable rows={5} cols={6} /></td></tr>
                             ) : users.length === 0 ? (
-                                <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: 'var(--vault-text-secondary)' }}>
-                                    No users found. <button className="vault-btn vault-btn--ghost" style={{ fontSize: 12 }} onClick={() => setAddOpen(true)}>Add one?</button>
-                                </td></tr>
+                                <tr>
+                                    <td colSpan={8}>
+                                        <EmptyState
+                                            title="No users found"
+                                            description="No users match your current filter or your organization has no users yet."
+                                            action={{ label: 'Add Employee', onClick: () => setAddOpen(true) }}
+                                        />
+                                    </td>
+                                </tr>
                             ) : users.map((u: any) => (
                                 <tr key={u._id} style={{ borderBottom: '1px solid var(--vault-border)', transition: 'background 120ms' }}
                                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--vault-bg)')}

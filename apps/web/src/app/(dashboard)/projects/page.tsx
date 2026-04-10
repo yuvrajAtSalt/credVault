@@ -8,6 +8,8 @@ import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { api } from '@/lib/api';
+import { SkeletonCardGrid } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import type { Project } from '@/types';
 
 type PopulatedProject = Project & {
@@ -84,8 +86,8 @@ export default function ProjectsPage() {
 
             {/* States */}
             {loading && (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--vault-ink-muted)', fontSize: 14 }}>
-                    Loading projects…
+                <div style={{ padding: '24px 0' }}>
+                    <SkeletonCardGrid count={6} />
                 </div>
             )}
 
@@ -96,13 +98,15 @@ export default function ProjectsPage() {
             )}
 
             {!loading && !error && filtered.length === 0 && (
-                <div className="vault-card" style={{ textAlign: 'center', padding: '48px 24px' }}>
-                    <p style={{ fontSize: 14, color: 'var(--vault-ink-muted)', marginBottom: 12 }}>
-                        {search || statusFilter ? 'No projects match your filters.' : 'No projects yet.'}
-                    </p>
-                    {perms.canCreateProject() && !search && !statusFilter && (
-                        <Button variant="primary" onClick={() => setShowCreate(true)}>Create your first project</Button>
-                    )}
+                <div className="vault-card" style={{ padding: 0 }}>
+                    <EmptyState
+                        title={search || statusFilter ? 'No projects match your filters' : 'No projects yet'}
+                        description={search || statusFilter ? 'Try adjusting your search or filters to find what you are looking for.' : 'Get started by creating your first project to manage credentials.'}
+                        action={perms.canCreateProject() && !search && !statusFilter ? {
+                            label: 'Create your first project',
+                            onClick: () => setShowCreate(true)
+                        } : undefined}
+                    />
                 </div>
             )}
 

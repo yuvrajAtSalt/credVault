@@ -36,6 +36,14 @@ async function apiFetch<T = unknown>(
     const json = await res.json();
 
     if (!res.ok) {
+        // Handle unauthorized access by clearing auth and redirecting
+        if (res.status === 401 && typeof window !== 'undefined') {
+            localStorage.removeItem('vault_user');
+            localStorage.removeItem('vault_token');
+            document.cookie = 'vault_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+            window.location.href = '/login';
+            return { data: null, error: { message: 'Session expired. Please login again.' } };
+        }
         return { data: null, error: json.error ?? { message: 'An unexpected error occurred.' } };
     }
 
