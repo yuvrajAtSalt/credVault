@@ -8,7 +8,7 @@ import { validateToken } from '../utils/validate-token';
 import { body } from '../utils/validator';
 import { z } from 'zod';
 import { VAULT_ROLES } from '../utils/constants';
-import { loginRateLimiter, inviteRateLimiter } from '../utils/rateLimit';
+import { inviteRateLimiter } from '../utils/rateLimit';
 
 const authRouter = Router();
 
@@ -39,7 +39,7 @@ authRouter.post('/register', body(registerSchema), async (req, res, next) => {
 });
 
 // ─── POST /api/v1/auth/login ──────────────────────────────────────────────────
-authRouter.post('/login', loginRateLimiter, ...loginValidations, async (req, res, next) => {
+authRouter.post('/login', ...loginValidations, async (req, res, next) => {
     try {
         const ip = req.ip || req.socket?.remoteAddress;
         const result = await authService.login(req.body, ip);

@@ -10,8 +10,12 @@ export function NotificationBell() {
     const panelRef                  = useRef<HTMLDivElement>(null);
 
     const fetchCount = useCallback(async () => {
-        const { data } = await api.get<any>('/api/v1/notifications/unread-count');
-        setUnread((data as any)?.data?.count ?? 0);
+        try {
+            const { data } = await api.get<any>('/api/v1/notifications/unread-count');
+            setUnread((data as any)?.data?.count ?? 0);
+        } catch {
+            // API may not be ready yet on initial mount — fail silently
+        }
     }, []);
 
     // Poll every 30 s
@@ -19,6 +23,12 @@ export function NotificationBell() {
         fetchCount();
         const id = setInterval(fetchCount, 30_000);
         return () => clearInterval(id);
+    }, [fetchCount]);
+
+    useEffect(() => {
+        const handler = () => fetchCount();
+        window.addEventListener('vault:new_notification', handler);
+        return () => window.removeEventListener('vault:new_notification', handler);
     }, [fetchCount]);
 
     // Close on outside click

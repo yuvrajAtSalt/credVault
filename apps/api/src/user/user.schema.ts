@@ -140,7 +140,6 @@ userSchema.virtual('initials').get(function () {
 });
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-userSchema.index({ email: 1 });
 userSchema.index({ name: 'text', email: 'text', jobTitle: 'text' });
 
 export const UserModel = model<IUserDocument>('User', userSchema);

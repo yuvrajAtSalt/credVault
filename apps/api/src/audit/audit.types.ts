@@ -61,6 +61,25 @@ export const AUDIT_ACTIONS = [
     'account.password_reset_self',
     'project.link_added',
     'project.link_removed',
+    // ─── Phase 13 ────────────────────────────────────────────────────────────
+    'access_review.initiated',
+    'access_review.member_decision',
+    'access_review.completed',
+    'access_review.overdue',
+    'offboarding.initiated',
+    'offboarding.step_completed',
+    'offboarding.credential_action',
+    'offboarding.completed',
+    'credential.rotated',
+    'approval.requested',
+    'approval.granted',
+    'approval.rejected',
+    'compliance.window_create',
+    'compliance.window_delete',
+    'compliance.approval_request_created',
+    'compliance.approval_approved',
+    'compliance.approval_rejected',
+    'compliance.digest_sent',
 ] as const;
 
 export const auditLogSchemaType = z.object({

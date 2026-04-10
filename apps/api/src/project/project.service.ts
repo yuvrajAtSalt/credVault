@@ -10,6 +10,7 @@ import { ProjectModel } from './project.schema';
 import { enqueueEmail } from '../utils/email/queue';
 import { templates } from '../utils/email/templates';
 import orgRepo from '../organisation/organisation.repo';
+import { createNotification, buildNotificationUrl } from '../notification/notification.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -176,6 +177,15 @@ export const addMember = async (projectId: string, body: { userId: string }, cur
         })),
     });
 
+    await createNotification({
+        organisationId: String(currentUser.organisationId),
+        userId: body.userId,
+        type: 'project.member_added',
+        title: `${currentUser.name || 'A team member'} added you to ${project.name}`,
+        url: buildNotificationUrl('project.member_added', { projectId: project._id }),
+        actorId: String(currentUser._id),
+    });
+
     return { statusCode: 200, message: 'MEMBER ADDED', data: updated };
 };
 
@@ -236,6 +246,15 @@ export const removeMember = async (projectId: string, userId: string, currentUse
             hadResidualAccess: retainedGrantsCount > 0,
             email: targetUser.email,
         })),
+    });
+
+    await createNotification({
+        organisationId: String(currentUser.organisationId),
+        userId,
+        type: 'project.member_removed',
+        title: `You were removed from ${project.name}`,
+        url: buildNotificationUrl('project.member_removed', { projectId: project._id }),
+        actorId: String(currentUser._id),
     });
 
     return { 

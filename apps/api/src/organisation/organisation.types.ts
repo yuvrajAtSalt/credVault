@@ -11,6 +11,21 @@ export const organisationSchemaType = z.object({
     createdBy: z.string().optional(),
     updatedBy: z.string().optional(),
     isDeleted: z.boolean().optional(),
+    accessReviewPolicy: z.object({
+        enabled: z.boolean().default(false),
+        frequencyDays: z.number().default(90),    // 30 | 60 | 90 | 180
+        reminderDaysBeforeDue: z.number().default(7),
+        autoRevokeOnMiss: z.boolean().default(false),
+    }).optional(),
+    credentialSharingPolicy: z.object({
+        allowEnvFileExport: z.boolean().default(true),
+        allowCopyToClipboard: z.boolean().default(true),
+        allowBulkExport: z.boolean().default(false),
+        requireExportJustification: z.boolean().default(false),
+        maxExportsPerDayPerUser: z.number().default(0),
+        allowedExportRoles: z.array(z.string()).default([]),
+        watermarkExports: z.boolean().default(false),
+    }).optional(),
 });
 
 export type IOrganisationSchema = z.infer<typeof organisationSchemaType>;

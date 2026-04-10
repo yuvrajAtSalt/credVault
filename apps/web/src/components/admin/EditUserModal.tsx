@@ -4,6 +4,8 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { VAULT_ROLES, ROLE_LABELS } from '@/lib/constants';
+import { Select } from '@/components/ui/Select';
+import { Toggle } from '@/components/ui/Toggle';
 
 const fetcher = (url: string) => api.get<any>(url).then((r) => r.data);
 
@@ -181,36 +183,53 @@ export function EditUserModal({ user, onClose }: Props) {
                         </Field>
                         {form.roleType === 'builtin' ? (
                             <Field label="Role">
-                                <select className="vault-input" value={form.role} onChange={(e) => up({ role: e.target.value })}>
-                                    {VAULT_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                                </select>
+                                <Select
+                                    value={form.role}
+                                    onChange={(val) => up({ role: val })}
+                                    options={VAULT_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r as keyof typeof ROLE_LABELS] }))}
+                                />
                             </Field>
                         ) : (
                             <Field label="Custom Role">
-                                <select className="vault-input" value={form.customRoleId} onChange={(e) => up({ customRoleId: e.target.value })}>
-                                    <option value="">Select…</option>
-                                    {(customRoles?.data ?? []).filter((r: any) => !r.isBuiltIn).map((r: any) => <option key={r._id} value={r._id}>{r.name}</option>)}
-                                </select>
+                                <Select
+                                    value={form.customRoleId || ''}
+                                    onChange={(val) => up({ customRoleId: val })}
+                                    options={[
+                                        ...((customRoles?.data ?? []).filter((r: any) => !r.isBuiltIn).map((r: any) => ({ value: r._id, label: r.name })))
+                                    ]}
+                                    placeholder="Select…"
+                                />
                             </Field>
                         )}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <Field label="Reports To">
-                                <select className="vault-input" value={form.reportingTo} onChange={(e) => up({ reportingTo: e.target.value })}>
-                                    <option value="">— None —</option>
-                                    {(members?.data ?? []).filter((m: any) => m._id !== user._id).map((m: any) => <option key={m._id} value={m._id}>{m.name}</option>)}
-                                </select>
+                                <Select
+                                    value={form.reportingTo || ''}
+                                    onChange={(val) => up({ reportingTo: val })}
+                                    options={[
+                                        { value: '', label: '— None —' },
+                                        ...((members?.data ?? []).filter((m: any) => m._id !== user._id).map((m: any) => ({ value: m._id, label: m.name })))
+                                    ]}
+                                    placeholder="— None —"
+                                />
                             </Field>
                             <Field label="Team">
-                                <select className="vault-input" value={form.teamId} onChange={(e) => up({ teamId: e.target.value })}>
-                                    <option value="">— None —</option>
-                                    {(teams?.data ?? []).map((t: any) => <option key={t._id} value={t._id}>{t.name}</option>)}
-                                </select>
+                                <Select
+                                    value={form.teamId || ''}
+                                    onChange={(val) => up({ teamId: val })}
+                                    options={[
+                                        { value: '', label: '— None —' },
+                                        ...((teams?.data ?? []).map((t: any) => ({ value: t._id, label: t.name })))
+                                    ]}
+                                    placeholder="— None —"
+                                />
                             </Field>
                         </div>
-                        <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
-                            <input type="checkbox" checked={form.isOrgRoot} onChange={(e) => up({ isOrgRoot: e.target.checked })} />
-                            <span>Set as organisation root</span>
-                        </label>
+                        <Toggle
+                            checked={form.isOrgRoot}
+                            onChange={(checked) => up({ isOrgRoot: checked })}
+                            label="Set as organisation root"
+                        />
                         <Footer loading={loading} error={error} success={success} onSave={saveRole} />
                     </>}
 
@@ -222,10 +241,13 @@ export function EditUserModal({ user, onClose }: Props) {
                                 <input className="vault-input" type="text" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="New temporary password" style={{ flex: 1 }} />
                                 <button className="vault-btn vault-btn--ghost" onClick={handleResetPassword} disabled={loading} style={{ fontSize: 12 }}>Reset</button>
                             </div>
-                            <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer', fontSize: 12 }}>
-                                <input type="checkbox" checked={form.forcePasswordChange} onChange={(e) => up({ forcePasswordChange: e.target.checked })} />
-                                Force password change on next login
-                            </label>
+                            <div style={{ marginTop: 8 }}>
+                                <Toggle
+                                    checked={form.forcePasswordChange}
+                                    onChange={(checked) => up({ forcePasswordChange: checked })}
+                                    label="Force password change on next login"
+                                />
+                            </div>
                         </div>
 
                         <div className="vault-card" style={{ padding: 16 }}>

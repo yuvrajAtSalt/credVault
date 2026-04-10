@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, Suspense, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -16,8 +16,9 @@ import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
 const NAV_ITEMS = [
     { href: '/dashboard', label: 'Dashboard', icon: '⊞' },
     { href: '/projects', label: 'Projects', icon: '◻' },
-    { href: '/team', label: 'Team', icon: '◎' },
     { href: '/directory', label: 'Directory', icon: '⊕' },
+    { href: '/teams', label: 'Teams', icon: '◎' },
+    { href: '/compliance', label: 'Compliance', icon: '🛡' },
 ];
 
 const SETTINGS_ITEMS = [
@@ -25,8 +26,10 @@ const SETTINGS_ITEMS = [
     { href: '/settings/organisation/general', label: 'General', adminOnly: true },
     { href: '/settings/roles', label: 'Roles & Permissions', adminOnly: true },
     { href: '/settings/permissions/requests', label: 'Access Requests', adminOnly: true },
-    { href: '/settings/organisation/structure', label: 'Teams', adminOnly: true },
     { href: '/settings/users', label: 'Users', adminOnly: true },
+    { href: '/settings/access-reviews', label: 'Access Reviews', adminOnly: true },
+    { href: '/settings/offboarding', label: 'Offboarding', adminOnly: true },
+    { href: '/settings/change-windows', label: 'Change Windows', adminOnly: true },
     { href: '/settings/audit-log', label: 'Audit Log', adminOnly: true },
 ];
 
@@ -205,7 +208,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     <Topbar onOpenSidebar={() => setSidebarOpen(true)} />
                     <CommandPalette />
                     <ErrorBoundary>
-                        {children}
+                        <Suspense fallback={
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                height: '60vh', flexDirection: 'column', gap: 12,
+                            }}>
+                                <div style={{
+                                    width: 32, height: 32, borderRadius: '50%',
+                                    border: '3px solid rgba(255,255,255,0.1)',
+                                    borderTopColor: 'var(--vault-accent)',
+                                    animation: 'spin 0.7s linear infinite',
+                                }} />
+                                <span style={{ color: 'var(--vault-text-muted)', fontSize: 13 }}>Loading…</span>
+                            </div>
+                        }>
+                            {children}
+                        </Suspense>
                     </ErrorBoundary>
                 </div>
             </div>

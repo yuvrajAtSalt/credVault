@@ -11,6 +11,21 @@ const organisationSchema = new Schema<IOrganisationSchema>(
             default: ['ceo', 'coo', 'cfo', 'cmo', 'manager', 'devops', 'developer', 'qa'],
         },
         isDeleted: { type: Boolean, default: false },
+        accessReviewPolicy: {
+            enabled: { type: Boolean, default: false },
+            frequencyDays: { type: Number, default: 90 },
+            reminderDaysBeforeDue: { type: Number, default: 7 },
+            autoRevokeOnMiss: { type: Boolean, default: false },
+        },
+        credentialSharingPolicy: {
+            allowEnvFileExport: { type: Boolean, default: true },
+            allowCopyToClipboard: { type: Boolean, default: true },
+            allowBulkExport: { type: Boolean, default: false },
+            requireExportJustification: { type: Boolean, default: false },
+            maxExportsPerDayPerUser: { type: Number, default: 0 },
+            allowedExportRoles: { type: [String], default: [] },
+            watermarkExports: { type: Boolean, default: false },
+        },
     },
     { timestamps: true },
 );
